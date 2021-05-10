@@ -117,7 +117,12 @@ class BirthdayCog(commands.Cog, name="Birthday"):
             for usr in new_birthday_members:
                 if role not in usr.roles:
                     await usr.add_roles(role)
-
+                    
+                    
+                    
+    async def test3(self):
+        pyMongoManager.collection_profiles.insert_one({"Test": "Passed"})
+        await ctx.send("Something")
 
 
 def setup(bot):
