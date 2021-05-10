@@ -120,7 +120,7 @@ class BirthdayCog(commands.Cog, name="Birthday"):
                     
                     
     @commands.command()                
-    async def test3(self):
+    async def test3(self, ctx):
         pyMongoManager.collection_profiles.insert_one({"Test": "Passed"})
         await ctx.send("Something")
 
