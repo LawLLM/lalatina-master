@@ -105,7 +105,8 @@ class BirthdayCog(commands.Cog, name="Birthday"):
             guild_panchessco = self.bot.get_guild(config.panchessco_id)
             role = guild_panchessco.get_role(config.role_birthday_id)
             birthday_members = guild_panchessco.get_role(config.role_birthday_id).members # Los que tienen el rol del cumpleaños
-            users = [x["user_id"] for x in pyMongoManager.collection_profiles.find() if
+            result = pyMongoManager.collection_profiles.find({})
+            users = [x["user_id"] for x in result if
                      x["birthday_date_day"] == date.today().day and x["birthday_date_month"] == date.today().month]
             new_birthday_members = [guild_panchessco.get_member(y) for y in users] # Los que cumplen
 
