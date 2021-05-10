@@ -21,7 +21,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
             'sexo': 752658698723262517
         }
         self.message_auto_reply = {
-            #'lalatina': 'https://media.tenor.com/images/37465eb4d7edea808a511abc18be5484/tenor.gif',
+            'lalatina': 'https://media.tenor.com/images/37465eb4d7edea808a511abc18be5484/tenor.gif',
         }
     
     @commands.Cog.listener()
