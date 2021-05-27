@@ -41,7 +41,7 @@ class OwnerCog(commands.Cog, name="Owner"):
     # Envia un msg a un determinado canal
     @commands.command()
     async def msg_channel(self, ctx, channel_id, *arg_msgs):
-        if ctx.author.id not in congif.owners_id:
+        if ctx.author.id not in config.owners_id:
             return
 
         msg = " ".join(arg_msgs)
