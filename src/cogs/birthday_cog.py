@@ -79,8 +79,6 @@ class BirthdayCog(commands.Cog, name="Birthday"):
     async def calendar(self, ctx):
         args = ctx.message.content.split()[1:]
 
-        print('1')
-
         month_num = None
 
         if len(args) > 0:
@@ -106,17 +104,11 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 
                 bytes_dict[profile['birthday_date_day']] = avatar_bytes
 
-        print('2')
-
         cg = CalendarGenerator()
         #img_buffer = cg.new_calendar_img(month_num, users_birthday)
         img_buffer = cg.new_calendar_img(month_num, bytes_dict)
 
-        print('3')
-
         await ctx.send(file=discord.File(fp=img_buffer, filename='hb.png'))
-
-        print('4')
     
     @commands.command()
     async def test_avatar(self, ctx):
