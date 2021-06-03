@@ -4,10 +4,13 @@ import calendar
 from io import BytesIO
 
 font_title = ImageFont.truetype('src/fonts/KGPrimaryWhimsy.ttf', 130)
-font_day_number = ImageFont.truetype('src/fonts/KGPrimaryWhimsy.ttf', 50)
+font_day_number = ImageFont.truetype('src/fonts/KGPrimaryWhimsy.ttf', 90)
 font_day_str = ImageFont.truetype('src/fonts/KGPrimaryWhimsy.ttf', 90)
 
-SQUARE_DAY_SIZE = (128, 128)
+img_mask = Image.open('src/images/mask2.png')
+
+SQUARE_W = 128
+SQUARE_DAY_SIZE = (SQUARE_W, SQUARE_W)
 W, H = (1056, 824)
 
 title_color = (255, 255, 0)
@@ -19,6 +22,8 @@ zone_day_str_y = 150
 
 zone_days_x_init = 50
 zone_days_y_init = 250
+
+today_datetime = datetime.datetime.now()
 
 month_str = {
     1: 'Enero',
@@ -48,6 +53,8 @@ day_str = {
 class CalendarGenerator():
     def new_calendar_img(self, month_int, bytes_dict):
         day_relative_base = datetime.datetime(2021, month_int, 1).weekday()
+        if day_relative_base == 6:
+            day_relative_base = -1
         a, total_days = calendar.monthrange(2021, month_int)
         max_day_num = day_relative_base + total_days
         y = int(max_day_num / 7)
@@ -62,10 +69,6 @@ class CalendarGenerator():
 
         w, h = draw.textsize(text_title, font=font_title)
         draw.text(((W-w)/2, 10), text_title, font=font_title, fill=(255, 255, 0))
-
-        
-
-        
 
         for i in range(7):
             day_name = day_str[i]
@@ -88,18 +91,29 @@ class CalendarGenerator():
             y_pos = zone_days_y_init + y * y_inc
 
             if day_datetime.weekday() == 6:
-                img_base.paste(img_day_weekend_true, (x_pos, y_pos))
+                img_base.paste(img_day_weekend_true, (x_pos, y_pos), img_mask)
             else:
-                img_base.paste(img_day_weekend_false, (x_pos, y_pos))
+                img_base.paste(img_day_weekend_false, (x_pos, y_pos), img_mask)
 
             if num_day in bytes_dict.keys():
                 img_avatar = Image.open(BytesIO(bytes_dict[num_day]))
-                img_base.paste(img_avatar, (x_pos, y_pos))
+                img_base.paste(img_avatar, (x_pos, y_pos), img_mask)
             else:
+                size_day_number = draw.textsize(str(num_day), font=font_day_number)
+                pos_day_number_x = x_pos + SQUARE_W/2 - size_day_number[0]/2
+                pos_day_number_y = y_pos + SQUARE_W/2 - size_day_number[1]/2
+
+                pos_day_number = (pos_day_number_x, pos_day_number_y)
+                #pos_day_number = (x_pos+5, y_pos+5)
+
                 if day_datetime.weekday() == 6:
-                    draw.text((x_pos+5, y_pos+5), str(num_day), font=font_day_number, fill=(112, 103, 110))
+                    draw.text(pos_day_number, str(num_day), font=font_day_number, fill=(112, 103, 110))
                 else:
-                    draw.text((x_pos+5, y_pos+5), str(num_day), font=font_day_number, fill=(0, 255, 255))
+                    draw.text(pos_day_number, str(num_day), font=font_day_number, fill=(0, 255, 255))
+        
+            if day_datetime.year == today_datetime.year and day_datetime.month == today_datetime.month and day_datetime.day == today_datetime.day:
+                rectangle_coord = (x_pos-5, y_pos-5, x_pos + SQUARE_W+5, y_pos + SQUARE_W+5)
+                draw.rounded_rectangle(rectangle_coord, radius=18, fill=None, outline=(255, 0, 0), width=10)                
 
         output_buffer = BytesIO()
         img_base.save(output_buffer, "png")
