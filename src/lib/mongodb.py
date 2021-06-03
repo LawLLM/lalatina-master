@@ -83,7 +83,14 @@ class PyMongoManager:
             newData['prefix'] = newPrefix
             
             self.collection_guilds.insert_one(newData)
-    
+            
+    def get_users_birthday(self, month):
+        myQuery = {'birthday_date_month': month}
+        result = list(self.collection_profiles.find(myQuery))
+        return result
+        
+        
+        
 
     # ECONOMY
 
