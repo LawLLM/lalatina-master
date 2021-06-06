@@ -24,17 +24,19 @@ class PyMongoManager:
     def __init__(self):
         self.client = pymongo.MongoClient(config.mongoDb_connection)
         self.db_discord = self.client['db_panchessco']
-        
-        self.collection_puzzles = self.db_discord['puzzles']
 
-        self.collection_puzzles_dataset = self.db_discord['puzzles_dataset']
-        
-        self.collection_games_explorer = self.db_discord['games_explorer']
+#        self.collection_puzzles = self.db_discord['puzzles']
+#
+#        self.collection_puzzles_dataset = self.db_discord['puzzles_dataset']
+#
+#        self.collection_games_explorer = self.db_discord['games_explorer']
         
         self.collection_profiles = self.db_discord['profiles']
-        self.collection_chess_games = self.db_discord['chess_games']
+#        self.collection_chess_games = self.db_discord['chess_games']
 
-        self.collection_guilds = self.db_discord['guilds']
+        self.collection_guilds = self.db_discord['guild']
+
+        self.shop = self.db_discord['shop']
 
         self.profile_base = {
             "user_id": None,
@@ -46,11 +48,28 @@ class PyMongoManager:
             "panchessco_money": 0,                      # Economy - Customize
             'legend_start_time': None,
             'legend_times': 0,
+            'inventory': {}
         }
 
         self.guild_base = {
             "guild_id": None,
-            "prefix": 'aq!',
+            "prefix": 'la!',
+            "work_time": 300
+        }
+
+        self.object_base = {
+            "name": None,
+            "key": None,
+            "value": 0,
+            "description": None,
+            "lot": None,
+            "oldRoleAdded": 0,
+            "newRoleAdded": False,
+            "roleRemoved": 0,
+            "channel_id": 0,
+            "message": None,
+            "log": False,
+            "refund": False
         }
 
 
@@ -83,14 +102,7 @@ class PyMongoManager:
             newData['prefix'] = newPrefix
             
             self.collection_guilds.insert_one(newData)
-            
-    def get_users_birthday(self, month):
-        myQuery = {'birthday_date_month': month}
-        result = list(self.collection_profiles.find(myQuery))
-        return result
-        
-        
-        
+    
 
     # ECONOMY
 
@@ -124,15 +136,15 @@ class PyMongoManager:
     def update_money(self, user_id, new_balance):
         myQuery = {'user_id': user_id}
 
-        if self.collection_chess_players.count_documents(myQuery, limit=1):
-            newValues = {'$set': {'eris': new_balance}}
-            self.collection_chess_players.update_one(myQuery, newValues)
+        if self.collection_profiles.count_documents(myQuery, limit=1):
+            newValues = {'$set': {'panchessco_money': new_balance}}
+            self.collection_profiles.update_one(myQuery, newValues)
         else:
             newData = copy.copy(self.profile_base)
             newData['user_id'] = user_id
-            newData['eris'] = new_balance
+            newData['panchessco_money'] = new_balance
 
-            self.collection_chess_players.insert_one(newData)
+            self.collection_profiles.insert_one(newData)
 
     def update_daily(self, user_id, new_balance, time_last_daily, daily_multiplier):
         myQuery = {'user_id': user_id}
@@ -148,6 +160,11 @@ class PyMongoManager:
             newData['daily_multiplier'] = daily_multiplier
 
             self.collection_chess_players.insert_one(newData)
+
+    def get_time_remaining(self):
+        myQuery = {'guild_id': 512830421805826048}
+        result = self.collection_guilds.find_one(myQuery)
+        return int(result['work_time'])
     
 
     # PROFILE
@@ -303,6 +320,11 @@ class PyMongoManager:
 
     
     # GUILDS
+
+    def get_panchessco_prefix(self):
+        myQuery = {"guild_id": 512830421805826048}
+        result = self.collection_guilds.find_one(myQuery)
+        return result['prefix']
 
     def update_discord_guild_push_sar(self, guild_id, newData):
         myQuery = {"guild_id": guild_id}
