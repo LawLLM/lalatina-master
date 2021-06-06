@@ -1,10 +1,20 @@
+import asyncio
+
 import discord
 from discord.ext import commands
 import copy
 
 import aiohttp
+import math
 
+import pymongo
 from src.lib.mongodb import PyMongoManager
+
+import config
+from src.bean.CONSTANTS import *
+
+import random
+
 
 #import modules.CONSTANTS_IMAGES as CONSTANTS_IMAGES
 
@@ -12,7 +22,7 @@ from src.lib.mongodb import PyMongoManager
 
 #import modules.CONSTANTS as CONSTANTS
 
-i#mageEditor = ImageEditor()
+#imageEditor = ImageEditor()
 
 pyMongoManager = PyMongoManager()
 session_emoji = aiohttp.ClientSession()
@@ -21,115 +31,154 @@ session_emoji = aiohttp.ClientSession()
 class EconomyCog(commands.Cog, name="Economy"):
     def __init__(self, bot):
         self.bot = bot
-        
-        self.all_products = {}
-        self.all_products.update(CONSTANTS_IMAGES.BOARDS)
-        self.all_products.update(CONSTANTS_IMAGES.PIECES)
-        self.all_products.update(CONSTANTS_IMAGES.BORDERS)
-
-        self.id_boards = CONSTANTS_IMAGES.BOARDS.keys()
-        self.id_pieces = CONSTANTS_IMAGES.PIECES.keys()
-        self.id_borders = CONSTANTS_IMAGES.BORDERS.keys()
-
-        self.id_all = self.all_products.keys()
 
 
     @commands.command()
     async def shop(self, ctx):
-        args = ctx.message.content.split()[1:]
-        # No se podrá comprar los elementos por defecto (brown, cburnett, cyan-basic)
-        if len(args) > 0:
-            category_input = args[0].lower()
-            correct_category = None
-            if 'board' in category_input:
-                correct_category = 'boards'
-                shop_items = copy.deepcopy(CONSTANTS_IMAGES.BOARDS)
-                del shop_items['brown']
-            elif 'piece' in category_input:
-                correct_category = 'pieces'
-                shop_items = copy.deepcopy(CONSTANTS_IMAGES.PIECES)
-                del shop_items['cburnett']
-            elif 'border' in category_input:
-                correct_category = 'borders'
-                shop_items = copy.deepcopy(CONSTANTS_IMAGES.BORDERS)
-                del shop_items['cyan']
+        list_objects = list(pyMongoManager.shop.find())
+        list_objects.sort(key=lambda x: x['value'])
 
-            if correct_category:
-                profile = pyMongoManager.get_chess_profile(ctx.author.id)
-                own_items = profile[correct_category]
-                emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
+        num_pages = math.ceil((len(list_objects)/10))
 
-                embed = discord.Embed()
-                embed.colour = discord.Color.from_rgb(0, 255, 255)
-                embed.title = correct_category.capitalize()
-                text = 'Use `aq!buy <item_id>` for buy a item\n'
-                text += 'Use `aq!preview <item_id>` to preview\n\n'
-                text += '**PRICE | item_id**:\n----------------------\n'
-                
-                for item_id in shop_items.keys():
-                    item_dict = shop_items[item_id]
-                    item_price = item_dict['price']
 
-                    if item_id in own_items:
-                        text += f'~~{item_price}~~ {emoji_aqua_coin} | ~~{item_id}~~\n'
-                    else:
-                        text += f'{item_price} {emoji_aqua_coin} | {item_id}\n'
-                
-                embed.description = text
 
-                await ctx.send(embed=embed)
+        for x in range(1, num_pages+1):
+            embed = discord.Embed()
+            embed.colour = discord.Color.from_rgb(230, 126, 34)
+            text = ""
+            for i in list_objects[x*10-10:x*10]:
+                text += f"**{i['name'].capitalize()}** - {i['value']} :eggplant:\n"
+                text += f"{i['description']}\n\n"
 
-            else:
-                await ctx.send('Correct Use: **aq!shop <pieces/boards/borders>**')
-        else:
-            await ctx.send('Correct Use: **aq!shop <pieces/boards/borders>**')
+            embed.description = text
+            embed.set_footer(text=f"Página {x} de {num_pages}")
+            await ctx.send(embed=embed)
 
-        # aq!shop <category> |||| category: pieces, board, border, ¿profile_card?(en el futuro)
+        await ctx.message.delete()
+
+
 
     @commands.command()
     async def buy(self, ctx):
         args = ctx.message.content.split()[1:]
 
-        if len(args) > 0:
-            item_id = args[0].lower()
+        user = pyMongoManager.get_profile(ctx.author.id)
 
-            if item_id in self.id_all:
-                player = pyMongoManager.get_chess_profile(ctx.author.id)
-                player_items_id = player['boards'] + player['pieces'] + player['borders']   # Items comprados
 
-                if item_id not in player_items_id:
-                    product = self.all_products[item_id]
+        channel_logs = self.bot.get_channel(config.channel_logs_id)
 
-                    if player['eris'] >= product['price']:
-                        final_balance = player['eris'] - product['price']
-                        category = None
-                        if item_id in self.id_boards:
-                            category = 'boards'
-                        elif item_id in self.id_pieces:
-                            category = 'pieces'
-                        elif item_id in self.id_borders:
-                            category = 'borders'
-                        
-                        pyMongoManager.buy_item(ctx.author.id, category, item_id, final_balance)
-                        emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-                        embed = discord.Embed()
-                        embed.colour = discord.Color.from_rgb(0, 255, 255)
-                        text= f'Item purchased: **{product["name"]}**\n'
-                        text += f'New Balance: {player["eris"]} - {product["price"]} = **{final_balance}** {emoji_aqua_coin}'
-                        embed.description = text
+        C_trencada = self.bot.get_emoji(555903896363466762)
+        ded = self.bot.get_emoji(633063734721380403)
 
-                        await ctx.send(embed=embed)
-
-                    # VERIFICAMOS EL SALDO, RETIRAMOS EL SALDO y AÑADIMOS EL ITEM AL INVENTARIO
-                    else:
-                        await ctx.send('Insufficient balance')
-                else:
-                    await ctx.send('You already own this product')
-            else:
-                await ctx.send('**Incorrect item_id**. Use `aq!shop` to see the list of products.')    
+        if len(args) == 0:
+            await ctx.send("Debes poner lo que quieras comprar")
 
         else:
-            await ctx.send('Correct Use: `aq!buy <item_id>`. Use `aq!shop` to see the list of products.')
+            cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó","o").replace("ú", "u").replace(" ", "").replace(".", "")
+            obj = pyMongoManager.shop.find_one({"key": cons})
+
+            if obj:
+                if obj['lot'] == 0:
+                    await ctx.send(f"No queda `{obj['name']}` en la tienda {C_trencada}")
+
+                else:
+
+                    if user['panchessco_money'] >=  obj['value']:
+                        user['panchessco_money'] -= obj['value']
+
+                        if obj['lot'] is not None:
+                            quantity = obj['lot']-1
+                            pyMongoManager.collection_profiles.update_one({'name': obj['name']}, {"$set":{"lot":quantity}})
+
+                        if obj['name'] in user['inventory']:
+                            user['inventory'][obj['name']] += 1
+
+                        else:
+                            user['inventory'][obj['name']] = 1
+
+                        if obj['log'] is True:
+                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha comprado el objeto `{obj['name']}`")
+
+                        pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
+
+                        await ctx.send(f"Has recibido `{obj['name']}`")
+
+                    else:
+                        await ctx.send("No tienes suficientes :eggplant:")
+
+            else:
+                await ctx.send("No se han encontrado el objeto")
+
+
+
+
+
+    @commands.command()
+    async def use(self, ctx):
+        args = ctx.message.content.split()[1:]
+
+        cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
+        obj = pyMongoManager.shop.find_one({"key": cons})
+        user = pyMongoManager.get_profile(ctx.author.id)
+
+        channel_logs = self.bot.get_channel(config.channel_logs_id)
+
+        if obj['name'] in user['inventory']:
+
+
+            if user['inventory'][obj['name']] > 0:
+
+
+                if obj['oldRoleAdded'] != 0:
+                    role = ctx.guild.get_role(obj['oldRoleAdded'])
+                    if role not in ctx.author.roles:
+                        await ctx.author.add_roles(role)
+
+                        if obj['log'] is True:
+                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha recibido el rol {role.name}")
+
+                    else:
+                        await ctx.send("Ya posees ese rol")
+
+                if obj['newRoleAdded'] != 0:
+                    await ctx.send("¿Qué nombre quieres ponerle al rol?")
+                    msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=3600)
+                    await ctx.guild.create_role(name=msg)
+                    roleCreated = ctx.guild.get_role(name=msg)
+                    if roleCreated in ctx.author.roles:
+                        await ctx.send("Ya posees ese rol")
+                    else:
+                        if obj['log'] is True:
+                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha creado y recibido el rol {roleCreated.name} por la compra de `{obj['name']}`")
+                        await ctx.author.add_roles(roleCreated)
+                        await ctx.send("Rol añadido")
+
+                if obj['roleRemoved'] != 0:
+                    roleRemoved = ctx.guild.get_role(obj['roleRemoved'])
+                    if roleRemoved in ctx.author.roles:
+                        await ctx.author.remove_roles(roleRemoved)
+                        if obj['log'] is True:
+                            await channel_logs.send(f"El rol {roleRemoved.name} ha sido removido del usuario **{ctx.author.name}** por la compra de `{obj['name']}`")
+                    else:
+                        await ctx.send("No se ha encontrado el rol a eliminar")
+
+                if obj['channel_id'] != 0:
+                    channelToSend = ctx.guild.get_channel(obj['channel_id'])
+                    await channelToSend.send(obj['message'])
+                    if obj['log'] is True:
+                        await channel_logs.send(f"El usuario **{ctx.author.name}** ha comprado el objeto `{obj['name']}`")
+
+                user['inventory'][cons] -= 1
+                pyMongoManager.collection_profiles.replace_one({"user_id": ctx.author.id}, user)
+
+            else:
+                await ctx.send(f"No tienes `{obj['name']}`")
+
+        else:
+            await ctx.send("No tienes o no se ha encontrado el objeto seleccionado")
+
+
+
 
     @commands.command(aliases=['inv', 'wallet'])
     async def inventory(self, ctx):
@@ -142,38 +191,35 @@ class EconomyCog(commands.Cog, name="Economy"):
                 member = ctx.message.mentions[0]
             elif args[0].isdigit():
                 try:
-                    member = await ctx.guild.fetch_member(int(args[0]))
+                    member = ctx.guild.get_member(int(args[0]))
                 except:
                     try:
-                        member = await self.bot.fetch_user(int(args[0]))
+                        member = self.bot.get_user(int(args[0]))
                     except:
                         emoji_nuu = self.bot.get_emoji(762174833752408106)
-                        await ctx.send(f'{emoji_nuu} User not found')
+                        await ctx.send(f'{emoji_nuu} Usuario no encontrado')
                         return
             else:
                 member = ctx.author
         
         if member.bot:
-            await ctx.send("This command does not work on bots")
+            await ctx.send("Este comando no funciona en bots")
             return
 
-        player = pyMongoManager.get_chess_profile(member.id)
+        user = pyMongoManager.collection_profiles.find_one({"user_id":member.id})
 
-        emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
 
         embed = discord.Embed()
-        embed.colour = discord.Color.from_rgb(0, 255, 255)
-        embed.title = f"{member.name}'s Inventory"
-        text = f'Cash: **{player["eris"]} {emoji_aqua_coin}**\n\n'
-        text += '**Boards:**\n'
-        text += ', '.join(player['boards'])
-        text += '\n\n**Pieces:**\n'
-        text += ', '.join(player['pieces'])
-        text += '\n\n**Borders:**\n'
-        text += ', '.join(player['borders'])
+        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.title = f"Inventario de {member.name}"
+
+        text = ""
+        text += f"Dinero: {user['panchessco_money']} :eggplant:\n\n"
+
+        for name, quantity in user['inventory'].items():
+            text += f"{name} (x{quantity})\n"
 
         embed.description = text
-
         await ctx.send(embed=embed)
 
     """
@@ -182,98 +228,119 @@ class EconomyCog(commands.Cog, name="Economy"):
         pass
     """
 
-    @commands.command(aliases=['equip'])
-    async def use(self, ctx):
-        args = ctx.message.content.split()[1:]
 
-        if len(args) > 0:
-            item_id = args[0].lower()
-
-            if item_id in self.id_all:
-                player = pyMongoManager.get_chess_profile(ctx.author.id)
-                player_items_id = player['boards'] + player['pieces'] + player['borders']   # Items comprados
-
-                if item_id in player_items_id:
-                    product = self.all_products[item_id]
-
-                    category_name = None
-                    current_category = None
-                    if item_id in self.id_boards:
-                        current_category = 'current_board'
-                        category_name = 'Board'
-                    elif item_id in self.id_pieces:
-                        current_category = 'current_pieces'
-                        category_name = 'Pieces'
-                    elif item_id in self.id_borders:
-                        current_category = 'current_border'
-                        category_name = 'Border'
-                        
-                    pyMongoManager.set_current_item(ctx.author.id, current_category, item_id)
-                    text= f'Chosen {category_name}: **{product["name"]}**\n'
-
-                    await ctx.send(text)
-                else:
-                    await ctx.send(f"You don't have that item, but you can buy it with the command `aq!buy {item_id}`")
-            else:
-                await ctx.send('**Incorrect item_id**. Use `aq!inventory` to see the list of purchased items.')    
-
-        else:
-            await ctx.send('Correct Use: `aq!use <item_id>`. Use `aq!inventory` to see the list of purchased items.')
     
 
-    @commands.command()
-    async def preview(self, ctx):
-        args = ctx.message.content.split()[1:]
+    @commands.command(aliases=['add_item', 'add_object', 'co'])
+    async def createobject(self, ctx):
 
-        async def help_preview():
-            embed = discord.Embed()
-            embed.colour = discord.Color.from_rgb(0, 255, 255)
-            embed.description = 'Correct Use:\n\naq!preview <itemId>\naq!preview <itemId1> <itemId2> ...'
-            await ctx.send(embed=embed)
+        obj = pyMongoManager.object_base
 
+        await ctx.send("¿Qué nombre quieres ponerle?")
+        try:
+            name = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
 
-        if len(args) == 0:
-            await help_preview()
+            obj['name'] = name.content
+            obj['key'] = name.content.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
             return
 
-        else:
-            items_count = 0
-            correct_pieces = None
-            correct_board = None
-            correct_border = None
+        await ctx.send("¿Qué valor tendrá?")
+        try:
+            value = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
 
-            for arg in args:
-                item_id = arg.lower()
-                
-                if item_id in self.id_all:
-                    if item_id in self.id_boards:
-                        correct_board = item_id
-                    elif item_id in self.id_pieces:
-                        correct_pieces = item_id
-                    elif item_id in self.id_borders:
-                        correct_border = item_id
-                    items_count += 1
-            
-            player = pyMongoManager.get_chess_profile(ctx.author.id)
-            
-            if correct_pieces:
-                player['current_pieces'] = correct_pieces
-            if correct_board:
-                player['current_board'] = correct_board
-            if correct_border:
-                player['current_border'] = correct_border
+            obj['value'] = int(value.content)
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
 
-            if items_count:
-                img_buffer = imageEditor.createChessBoard(player, CONSTANTS.BASE_FEN)
-                await ctx.send(file=discord.File(fp=img_buffer, filename='game.png'))
-            else:
-                await help_preview()
-                return
-    
-    @commands.cooldown(1, 10.0, commands.BucketType.user)
+        await ctx.send("Escribe la descripción:")
+        try:
+            description = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+            obj['description'] = description.content
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send(f"¿Cuántos {name.content} habrá en la tienda? Si no quieres que haya límite, pon `s`")
+        try:
+            lot = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+            if lot.content != "s":
+                if lot.content.isdigit():
+                    obj['lot'] = int(lot.content)
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send("¿Qué rol otorgará el objeto? Si no quieres que de ninguno, pon `s`")
+        try:
+            oldRoleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and len(message.role_mentions) > 0 or message.content == "s", timeout=600)
+
+            if oldRoleAdded.content != "s":
+                obj['oldRoleAdded'] = oldRoleAdded.role_mentions[0].id
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send("¿Quieres que el objeto permita crear un rol personalizado?")
+        try:
+            newRoleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+            if newRoleAdded.content.lower() in ("yes", "si", "see", "s"):
+                obj['newRoleAdded'] = True
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send(f"¿Qué rol quieres que `{obj['name']}` elimine un rol de un usuario? Si no quieres que quite ningún rol, pon `s`")
+        try:
+            roleRemoved = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and len(message.role_mentions) > 0 or message.content == "s", timeout=600)
+
+            if roleRemoved.content != "s":
+                obj['roleRemoved'] = roleRemoved.role_mentions[0].id
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send("¿En qué canal quieres que envíe un mensaje? Si no quieres, pon `s`")
+        try:
+            channel_id = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+            if channel_id.content.lower() != "s":
+                obj['channel_id'] = int(channel_id.content)
+
+                await ctx.send("Introduce el mensaje a enviar")
+                message = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+                obj['message'] = message.content
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send("¿Quieres que se notifique en el canal <#835391694215053352> cuando alguien adquiera el objeto o cuando se le de un rol por su uso?")
+        try:
+            log = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+
+            if log.content.lower() in ("yes", "si", "see", "s"):
+                obj['log'] = True
+
+            pyMongoManager.shop.insert_one(obj)
+            await ctx.send(f"{obj['name']} creado!")
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+
+
+
+
     @commands.command(aliases=['give-money', 'give', 'gm'])
     async def givemoney(self, ctx):
         args = ctx.message.content.split()[1:]  # User - Amount
+        print(args)
 
         if len(args) >= 2:
             if args[1].isdigit():
@@ -281,93 +348,101 @@ class EconomyCog(commands.Cog, name="Economy"):
                     member = ctx.message.mentions[0]
                 elif args[0].isdigit():
                     try:
-                        member = await self.bot.fetch_user(int(args[0]))
+                        print("a")
+                        print(int(args[0]))
+                        member = ctx.guild.get_member(int(args[0]))
                     except:
-                        emoji_nuu = self.bot.get_emoji(762174833752408106)
-                        await ctx.send(f'{emoji_nuu} User not found')
-                        return
+                        try:
+                            print("b")
+                            member = self.bot.get_user(int(args[0]))
+                        except:
+                            emoji_nuu = self.bot.get_emoji(762174833752408106)
+                            await ctx.send(f'{emoji_nuu} Usuario no encontrado')
+                            return
                 if member.bot:
-                    await ctx.send("This command does not work on bots")
+                    await ctx.send("Este comando no funciona en bots")
                     return
                 
                 elif member.id == ctx.author.id:
-                    await ctx.send("You can't give money to yourself")
+                    await ctx.send("No puedes darte dinero a ti mismo")
                 
                 else:
                     emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-                    player_author = pyMongoManager.get_chess_profile(ctx.author.id)
-                    player_receiver = pyMongoManager.get_chess_profile(member.id)
+                    player_author = pyMongoManager.get_profile(ctx.author.id)
+                    player_receiver = pyMongoManager.get_profile(member.id)
                     amount = int(args[1])
 
                     if amount == 0:
-                        await ctx.send(f"Please give more than **0¨** {emoji_aqua_coin}")
-                    elif player_author['eris'] < amount:
-                        await ctx.send(f"You don't have enough money. You currently have **{player_author['eris']}** {emoji_aqua_coin} ")
+                        await ctx.send(f"Por favor da más de **0** :eggplant:")
+                    elif player_author['panchessco_money'] < amount:
+                        await ctx.send(f"No tienes suficiente dinero. Ahora mismo tienes **{player_author['panchessco_money']}** :eggplant: ")
                     else:
-                        new_balance_author = player_author['eris'] - amount
-                        new_balance_receiver = player_receiver['eris'] + amount
+                        new_balance_author = player_author['panchessco_money'] - amount
+                        new_balance_receiver = player_receiver['panchessco_money'] + amount
+
 
                         pyMongoManager.update_money(ctx.author.id, new_balance_author)
                         pyMongoManager.update_money(member.id, new_balance_receiver)    
 
                         embed = discord.Embed()
-                        embed.colour = discord.Color.from_rgb(0, 255, 255)
+                        embed.colour = discord.Color.from_rgb(230, 126, 34)
 
-                        text = f"{ctx.author.name}'s Cash: **{new_balance_author}** {emoji_aqua_coin}"
-                        text += f"\n{member.name}'s Cash: **{new_balance_receiver}** {emoji_aqua_coin}"
+                        text = f"Dinero de {ctx.author.name}: **{new_balance_author}** (-{amount}) :eggplant:"
+                        text += f"\n Dinero de {member.name}: **{new_balance_receiver}** (+{amount}) :eggplant:"
                         
                         embed.description = text
 
                         await ctx.send(embed=embed)
             else:
-                await ctx.send('Incorrect <amount>. Correct Use: `aq!givemoney <user> <amount>`')
+                await ctx.send('Cantidad no válida. Uso correcto: `la!givemoney <user> <amount>`')
         else:
-            await ctx.send('Correct Use: `aq!givemoney <user> <amount>`')
+            await ctx.send('Uso correcto: `la!givemoney <user> <amount>`')
+
+
 
 
     @commands.command()
     async def addmoney(self, ctx):
-        if ctx.author.id != 402291352282464259:
+        if ctx.message.author.guild_permissions.administrator:
+
+            args = ctx.message.content.split()[1:]
+
+            if len(args) == 2:
+                if args[1].isdigit():
+                    if len(ctx.message.mentions) > 0:
+                        member = ctx.message.mentions[0]
+                    elif args[0].isdigit():
+                        try:
+                            member = self.bot.get_user(int(args[0]))
+                        except:
+                            emoji_nuu = self.bot.get_emoji(762174833752408106)
+                            await ctx.send(f'{emoji_nuu} usuario no encontrado')
+                            return
+                    if member.bot:
+                        await ctx.send("Este comando no funciona en bots")
+                        return
+
+                    player = pyMongoManager.get_profile(member.id)
+                    new_balance = player['panchessco_money'] + int(args[1])
+
+                    emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
+                    pyMongoManager.update_money(member.id, new_balance)
+                    await ctx.send(f"Dinero de {member.name}: **{new_balance}** :eggplant:")
+                else:
+                    await ctx.send('Cantidad no válida')
+            else:
+                await ctx.send('Uso correcto: `la!addmoney <user> <amount>`')
+        else:
             return
 
-        args = ctx.message.content.split()[1:]
-
-        if len(args) == 2:
-            if args[1].isdigit():
-                if len(ctx.message.mentions) > 0:
-                    member = ctx.message.mentions[0]
-                elif args[0].isdigit():
-                    try:
-                        member = await self.bot.fetch_user(int(args[0]))
-                    except:
-                        emoji_nuu = self.bot.get_emoji(762174833752408106)
-                        await ctx.send(f'{emoji_nuu} User not found')
-                        return
-                if member.bot:
-                    await ctx.send("This command does not work on bots")
-                    return
-                
-                player = pyMongoManager.get_chess_profile(member.id)
-                new_balance = player['eris'] + int(args[1])
-
-                emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-                pyMongoManager.update_money(member.id, new_balance)
-                await ctx.send(f"{member.name}'s Cash: **{new_balance}** {emoji_aqua_coin}")
-            else:
-                await ctx.send('Incorrect <amount>')
-        else:
-            await ctx.send('Correct Use: `aq!addmoney <user> <amoun>`')
 
 
 
 
-
-    """ @commands.command()
+    @commands.command()
     async def top(self, ctx):
         args = ctx.message.content.split()[1:]
-        emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
 
-        # CALCULAMOS EN QUE PÁGINA ESTAMOS
         page = 1
 
         if len(args) == 0:
@@ -378,36 +453,89 @@ class EconomyCog(commands.Cog, name="Economy"):
             else:
                 page = 1
 
-        #result = self.chess_players.find({'eris': {'$ne': 0}})
-        result = pyMongoManager.collection_chess_players.find({'eris': {'$ne': 0}})
+
+        result = pyMongoManager.collection_profiles.find({'panchessco_money': {'$ne': 0}})
         list_result = list(result)
-        list_result.sort(key=lambda result: result['eris'], reverse=True)
+        list_result.sort(key=lambda result: result['panchessco_money'], reverse=True)
         
-        num_users = len(list_result)        # TOTAL DE USUARIOS
+        num_users = len(list_result)
 
         ITEMS_PER_PAGE = 10
-        num_pages = int((num_users + (ITEMS_PER_PAGE-1)) / ITEMS_PER_PAGE)  # TOTAL DE PÁGINAS
+        num_pages = int((num_users + (ITEMS_PER_PAGE-1)) / ITEMS_PER_PAGE)
 
-        if page > num_pages:    # POR SI SE PASAN DE PÁGINA
+        if page > num_pages:
             page = num_pages
 
-        nmb_a = (page-1) * ITEMS_PER_PAGE     # EL RANGO DE VALORES QUE USAREMOS
+        nmb_a = (page-1) * ITEMS_PER_PAGE
         nmb_b = nmb_a + ITEMS_PER_PAGE
 
         embed = discord.Embed()
-        embed.colour = discord.Color.from_rgb(0, 255, 255)
-        embed.set_footer(text=f'Page {page} of {num_pages}')
+        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.set_footer(text=f'Página {page} de {num_pages}')
 
-        # MOSTRAMOS LOS RESULTADOS
+
         index = 1
         text = ""
         for item in list_result[nmb_a:nmb_b]:
-            text += f"{index+nmb_a}. {item['user_id']} - {item['eris']} {emoji_aqua_coin}\n"
+            text += f"{index+nmb_a}. <@{item['user_id']}> - {item['panchessco_money']} :eggplant:\n"
             index += 1
         
         embed.description = text
 
-        await ctx.send(embed=embed) """
+        await ctx.send(embed=embed)
+
+
+
+    @commands.cooldown(1, pyMongoManager.get_time_remaining(), commands.BucketType.user)
+    @commands.command()
+    async def work(self, ctx):
+        user = pyMongoManager.get_profile(ctx.author.id)
+
+        amount = random.randint(100, 700)
+
+        user['panchessco_money'] += amount
+
+        pyMongoManager.update_money(ctx.author.id, user['panchessco_money'])
+
+        f = open("src/bean/work_phrases.txt", 'r')
+        phrases = [str(x) for x in f]
+        f.close()
+
+        embed = discord.Embed()
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.description = random.choice(phrases).replace("{amount}", str(amount))
+        await ctx.send(embed=embed)
+
+
+    @commands.command()
+    async def addphrase(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
+            args = ctx.message.content.split()[1:]
+
+            if len(args) == 0:
+                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
+
+            else:
+                if "{amount}" in args:
+                    f = open("src/bean/work_phrases.txt", 'a')
+                    f.write(' '.join(args).replace("🍆", ":eggplant:") + "\n")
+                    f.close()
+                    await ctx.send("Frase añadida!")
+
+                else:
+                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
+
+        else:
+            return
+
+
+
+    @commands.command()
+    async def 
+
+
+
 
 def setup(bot):
     bot.add_cog(EconomyCog(bot))
