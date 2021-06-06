@@ -26,6 +26,7 @@ initial_extensions = (
     'src.cogs.staff_cog',
     'src.cogs.birthday_cog',
     'src.cogs.tournament_cog',
+    'src.cogs.economy_cog',
 )
 
 
