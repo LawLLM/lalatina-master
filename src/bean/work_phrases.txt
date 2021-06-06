@@ -1,0 +1,4 @@
+Por trabajar como desarrollador de aqua, has ganado {amount} :eggplant:
+Por trabajar como desarrollador de lalatina, has ganado {amount} :eggplant:
+Has conducido un taxi, por lo que recibes {amount} :eggplant:
+Por desarrollar un videojuego, ganas {amount} :eggplant:
