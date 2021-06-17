@@ -5,6 +5,7 @@ import discord.utils as dutils
 
 import src.lib.mongodb as mongodb
 
+import matplotlib
 import matplotlib.colors as mcolors
 
 pyMongoManager = mongodb.PyMongoManager()
