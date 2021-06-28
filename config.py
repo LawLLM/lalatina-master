@@ -25,3 +25,6 @@ mongoDb_connection = os.environ.get('MONGODB_STRING')
 # ROL CUMPLEAÑOS
 role_birthday_id = 795376236259049493
 
+# CLAVE DEEPL
+deepl_pass = os.environ.get('DEEPL_PASS')
+
