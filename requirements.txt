@@ -4,3 +4,4 @@ pymongo[srv]
 Pillow
 requests
 aiohttp
+pydeepl
