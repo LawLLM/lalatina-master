@@ -43,7 +43,7 @@ class BaseCog(commands.Cog, name="Base"):
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
 
         if message.content.startswith('>>>'):
-            args = message.content.split(" ")[0:].replace(">>>", "")
+            args = message.content.replace(">>>", "").split(" ")[0:]
 
             data = {
                 'auth_key': config.deepl_pass,
