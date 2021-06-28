@@ -46,7 +46,7 @@ class BaseCog(commands.Cog, name="Base"):
             args = message.content.split(" ")[0:].replace(">>>", "")
 
             data = {
-                'auth_key': '',
+                'auth_key': config.deepl_pass,
                 'text': ' '.join(args),
                 'target_lang': 'ES'
             }
