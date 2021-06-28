@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import copy
 
+import unidecode
+
 import aiohttp
 import config
 
@@ -29,7 +31,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
         if message.guild.id not in (691310556489056398, 512830421805826048):
             return
         
-        content_lower = message.content.lower()
+        content_lower = unidecode.unidecode(message.content.lower())
         if content_lower in self.emoji_auto_reaction_id.keys():
             emoji = self.bot.get_emoji(self.emoji_auto_reaction_id[content_lower])
             await message.add_reaction(emoji)
