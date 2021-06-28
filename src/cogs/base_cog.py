@@ -9,12 +9,14 @@ import config
 
 import src.bean.CONSTANTS as CONSTANTS
 
+import pydeepl
+import requests
+
 #import modules.mongodb as mongodb
 
 #pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
-
 
 session_dbg = aiohttp.ClientSession()
 session_dbl = aiohttp.ClientSession()
@@ -39,6 +41,25 @@ class BaseCog(commands.Cog, name="Base"):
         
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
+
+        if message.content.startswith('>>>'):
+            message.content.replace(">>>", "")
+            args = message.content.split(" ")[0:]
+
+            data = {
+                'auth_key': 'c62222c7-e003-7c4e-368f-28e63a5e66e1:fx',
+                'text': ' '.join(args),
+                'target_lang': 'ES'
+            }
+
+            response = requests.post('https://api-free.deepl.com/v2/translate', data=data)
+            await message.channel.send(response.json()["translations"][0]["text"])
+
+
+
+
+
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -99,6 +120,9 @@ class BaseCog(commands.Cog, name="Base"):
                 else:
                     await ctx.send('This command requieres: **Embed Links** permission in this channel')
                     return
+
+#        if isinstance(error, discord.errors.MissingPermissions):
+#            await ctx.send("No tengo suficientes permisos")
 
 
         text_0 = f'Author: {ctx.author} ({ctx.author.id})'
