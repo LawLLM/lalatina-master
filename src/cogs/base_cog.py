@@ -46,7 +46,7 @@ class BaseCog(commands.Cog, name="Base"):
             args = message.content.split(" ")[0:].replace(">>>", "")
 
             data = {
-                'auth_key': 'c62222c7-e003-7c4e-368f-28e63a5e66e1:fx',
+                'auth_key': '',
                 'text': ' '.join(args),
                 'target_lang': 'ES'
             }
