@@ -5,3 +5,4 @@ Pillow
 requests
 aiohttp
 pydeepl
+unidecode
