@@ -43,8 +43,7 @@ class BaseCog(commands.Cog, name="Base"):
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
 
         if message.content.startswith('>>>'):
-            message.content.replace(">>>", "")
-            args = message.content.split(" ")[0:]
+            args = message.content.split(" ")[0:].replace(">>>", "")
 
             data = {
                 'auth_key': 'c62222c7-e003-7c4e-368f-28e63a5e66e1:fx',
