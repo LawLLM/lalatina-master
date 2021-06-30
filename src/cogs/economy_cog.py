@@ -497,40 +497,172 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         pyMongoManager.update_money(ctx.author.id, user['panchessco_money'])
 
-        f = open("src/bean/work_phrases.txt", 'r')
-        phrases = [str(x) for x in f]
-        f.close()
+        # f = open("src/bean/work_phrases.txt", 'r')
+        # phrases = [str(x) for x in f]
+        # f.close()
 
         embed = discord.Embed()
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.colour = discord.Color.from_rgb(230, 126, 34)
-        embed.description = random.choice(phrases).replace("{amount}", str(amount))
+        # embed.description = random.choice(phrases).replace("{amount}", str(amount))
         await ctx.send(embed=embed)
 
 
-    @commands.command()
-    async def addphrase(self, ctx):
-        if ctx.message.author.guild_permissions.administrator:
-            args = ctx.message.content.split()[1:]
+#    @commands.command()
+#    async def addphrase(self, ctx):
+#        if ctx.message.author.guild_permissions.administrator:
+#            args = ctx.message.content.split()[1:]
+#
+#            if len(args) == 0:
+#                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
+#
+#            else:
+#                if "{amount}" in args:
+#                    f = open("src/bean/work_phrases.txt", 'a')
+#                    f.write(' '.join(args).replace("🍆", ":eggplant:") + "\n")
+#                    f.close()
+#                    await ctx.send("Frase añadida!")
+#
+#                else:
+#                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
+#
+#        else:
+#            return
 
-            if len(args) == 0:
-                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
 
-            else:
-                if "{amount}" in args:
-                    f = open("src/bean/work_phrases.txt", 'a')
-                    f.write(' '.join(args).replace("🍆", ":eggplant:") + "\n")
-                    f.close()
-                    await ctx.send("Frase añadida!")
+    @commands.command(aliases=['bj'])
+    async def blackjack(self, ctx):
+        args = ctx.message.content.split()[1:]
 
-                else:
-                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
+        player_cards = []
+        bot_cards = []
+
+        
+
+        player_value = 0
+        bot_value = 0
+
+        endgame = False
+
+        player_wins = False
+        blackjack = False
+
+        emoji_server1 = self.bot.get_guild(728003338880286753)
+        emoji_server2 = self.bot.get_guild(855864156765945897)
+
+
+        game_cards = [11, 11, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6,
+        7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]*3
+
+        game_cards_string = {
+    
+            1: ['<:AsTreboles:855862941164109824>', '<:AsCorazones:855862941219946536>'],
+            2: ['<:2corazones:855862940980346893>', '<:2diamantes:855862941034348585>', '<:2picas:855862941168304198>', '<:2treboles:855862941265952788>'],
+            3: ['<:3picas:855862940796452936>', '<:3treboles:855862940904849409>', '<:3diamantes:855862941413146624>', '<:3corazones:855862941563617310>'],
+            4: ['<:4treboles:855862940871688253>', '<:4picas:855862941047455765>', '<:4diamantes:855862941152575546>', '<:4corazones:855862941228597289>'],
+            5: ['<:5treboles:855862940984279082>', '<:5picas:855862941186654249>', '<:5diamantes:855862941295181824>', '<:5corazones:855862941337124914>'],
+            6: ['<:6corazones:855862940912582667>', '<:6diamantes:855862941113647105>', '<:6treboles:855862941201989672>', '<:6picas:855862941311303731>'],
+            7: ['<:7treboles:855862940980740167>', '<:7picas:855862941201858580>', '<:7corazones:855862941202645042>', '<:7diamantes:855862941231218718>'],
+            8: ['<:8treboles:855862940899737621>', '<:8corazones:855862941268836383>', '<:8diamantes:855862941303832625>', '<:8picas:855862941424156722>'],
+            9: ['<:9picas:855862940792389633>', '<:9treboles:855862940993060884>', '<:9diamantes:855862941236330526>', '<:9corazones:855862941337124904>'],
+            10:['<:KDiamantes:855862940883746816>', '<:KTreboles:855862940943384627>', '<:JPicas:855862941035528232>', '<:JTreboles:855862941080616980>',
+            '<:JDiamantes:855862941114433556>', '<:JCorazones:855862941189931028>', '<:KCorazones:855862941261758534>', '<:QDiamantes:855862941390602281>',
+            '<:KPicas:855862941404758066>', '<:QCorazones:855862941454696488>', '<:QPicas:855864206392950825>', '<:QTreboles:855864206527430657>', 
+            '<:10treboles:855862941287317544>', '<:10diamantes:855862941366747156>', '<:10picas:855862941282467870>', '<:10corazones:855862941499785246>'],
+            11:['<:AsPicas:855862941240655892>', '<:AsDiamantes:855862941262151751>']
+        
+        
+        
+        }
+
+
+
+
+        if len(args) == 0:
+            await ctx.send("Debes poner tu apuesta")
 
         else:
-            return
+            
+            if args[0].isdigit():
+
+                player = pyMongoManager.get_profile(ctx.author.id)
+
+                if player['panchessco_money'] >= (amount := int(args[0])):
+
+
+                    async def hit(gambler):
+
+                        card_value = random.choice(game_cards)
+                        card_emoji = random.choice([x for x in game_cards_string[card_value]])
+                        game_cards.remove(card_value)
+                        
+                        if gambler == "player":
+
+                            player_cards.append(card_emoji)
+                            player_value += card_value
+
+                        else:
+                            bot_cards.append(card_emoji)
+                            bot_value += card_value
+
+
+                    async def double(gambler):
+
+                        card_value = random.choice(game_cards)
+                        card_emoji = random.choice([x for x in game_cards_string[card_value]])
+                        game_cards.remove(card_value)
+
+                        if gambler == "player":
+
+                            player_cards.append(card_emoji)
+                            player_value += card_value
+                            amount*=2
+
+                        else:
+                            bot_cards.append(card_emoji)
+                            bot_value += card_value
+
+                        endgame = True
+
+
+                    async def stand():
+
+                        if bot_value < 17:
+                            await hit("bot")
+                        endgame = True
+
+
+                    async def check():
+
+                        if player_value > 21 and bot_value <= 21:
+                            endgame = True 
+
+                        elif player_value == 21 and bot_value != 21:
+                            blackjack = True 
+                            endgame = True
+                            player_wins = True
+
+                        elif player_value < 21 and bot_value > 21:
+                            engame = True
+                            player_wins = True
+
+                        else:
+                            pass
 
 
 
+
+                    embed = discord.Embed()
+                    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+                    embed.add_field(name=f"{ctx.author.name}'s cards:\n", value=f"{' '.join(player_cards)}\n Value: {player_value}", inline=True)
+                    embed.add_field(name=f"Lalatina's cards:\n", value=f"{' '.join(bot_cards)}\n Value: {bot_value}", inline=True)
+                    btn_red = Button(label='Red Button!', style=ButtonStyle.Red, custom_id='red_btn')
+                    await hit("player")
+                    await hit("player")
+                    await hit("bot")
+                    await hit("bot")
+
+                    await ctx.send(embed=embed)
 
 
 
