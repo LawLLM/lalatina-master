@@ -497,36 +497,127 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         pyMongoManager.update_money(ctx.author.id, user['panchessco_money'])
 
-        # f = open("src/bean/work_phrases.txt", 'r')
-        # phrases = [str(x) for x in f]
-        # f.close()
+        server = pyMongoManager.get_guild(512830421805826048)
 
+        phrases = [x for x in server['work_phrases']]
+        
+
+        
         embed = discord.Embed()
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.colour = discord.Color.from_rgb(230, 126, 34)
-        # embed.description = random.choice(phrases).replace("{amount}", str(amount))
+        embed.description = random.choice(phrases).replace("{amount}", str(amount))
         await ctx.send(embed=embed)
 
 
-    @commands.command()
+    @commands.command(aliases=['addp', 'add_phrase', 'add-phrase'])
     async def addphrase(self, ctx):
         if ctx.message.author.guild_permissions.administrator:
             args = ctx.message.content.split()[1:]
 
             if len(args) == 0:
-                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
+                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{{{}}}`".format('amount'))
 
             else:
-                if "{amount}" in args:
+                if "{{{}}}".format('amount') in args:
                     pyMongoManager.add_work_phrase(' '.join(args).replace("🍆", ":eggplant:"))
                     await ctx.send("Frase añadida!")
 
                 else:
-                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
+                    await ctx.send("Debes sustituir las ganancias por `{{{}}}`".format('amount'))
 
         else:
-            return
+            emojiNo = self.bot.get_emoji(753432948371357696)
+            await ctx.send(emojiNo)
 
+
+    @commands.command(aliases=['showp', 'show_phrase', 'show-phrase'])
+    async def showphrases(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
+            args = ctx.message.content.split()[1:]
+
+            server = pyMongoManager.get_guild(512830421805826048)
+            work_phrases = server['work_phrases']
+
+            page = 1
+            num_pages = math.ceil(len(work_phrases)/10)
+
+            if len(args) > 0:
+                if args[0].isdigit():
+                    if num_pages >= page:
+                        page = int(args[0])
+
+                    else:
+                        page = num_pages
+
+
+            embed = discord.Embed(title='Frases del Comando Work')
+            embed.colour = discord.Color.from_rgb(230, 126, 34)
+            text = ""
+
+            index = page*10-9
+            for x in work_phrases[page*10-10:page*10]:
+                text += f"{index}. {x}\n"
+                index+= 1
+
+            embed.description = text
+            embed.set_footer(text=f"Página {page} de {num_pages}")
+            await ctx.send(embed=embed)
+
+        else:
+            emojiNo = self.bot.get_emoji(753432948371357696)
+            await ctx.send(emojiNo)            
+
+
+            
+            
+    @commands.command(aliases=['delp', 'delete_phrase', 'delete-phrase'])
+    async def deletephrase(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
+            args = ctx.message.content.split()[1:]
+            
+            if len(args) == 0:
+                await ctx.send("Tienes que poner la frase o su posición")
+    
+            
+            else:
+                server = pyMongoManager.get_guild(512830421805826048)
+                index = None
+                if len(args) == 2 and args[0].isdigit() and args[1].isdigit():
+                    index = [int(args[0]), int(args[1])]
+                    try:
+                        phrase = server['work_phrases'][index[0]-1:index[1]]
+                        pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': { '$in': phrase }}}, upsert=False, multi=True)
+                        await ctx.send("Frase eliminada!")
+                    except IndexError:
+                        await ctx.send("Los índices son incorrectos")
+    
+    
+                elif len(args) == 1 and args[0].isdigit():
+                    index = int(args[0])
+                    try:
+                        phrase = server['work_phrases'][index-1]
+                        pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
+                        await ctx.send("Frase eliminada!")
+                    except IndexError:
+                        await ctx.send(f"El índice es incorrecto (No existe elemento nº{index}")
+    
+    
+    
+                else:
+                    phrase = ' '.join(args).replace("🍆", ":eggplant:")
+                    if phrase not in work_phrases:
+                        await ctx.send(f"No se ha encontrado la frase `{phrase}`")
+                    else:
+                        pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
+                        await ctx.send("Frase eliminada!")
+
+        else:
+            emojiNo = self.bot.get_emoji(753432948371357696)
+            await ctx.send(emojiNo)  
+            
+            
+            
 
     @commands.command(aliases=['bj'])
     async def blackjack(self, ctx):
