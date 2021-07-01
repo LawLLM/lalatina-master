@@ -166,6 +166,9 @@ class PyMongoManager:
         result = self.collection_guilds.find_one(myQuery)
         return int(result['work_time'])
     
+    def add_work_phrase(self, phrase):
+        self.collection_guilds.update({'guild_id': 512830421805826048}, {'$push': {'work_phrases': phrase}})
+        
 
     # PROFILE
     
