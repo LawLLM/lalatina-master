@@ -518,7 +518,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             else:
                 if "{amount}" in args:
-                    pyMongoManager.add_work_phrase(' '.join(str(args)).replace("🍆", ":eggplant:"))
+                    pyMongoManager.add_work_phrase(' '.join(args).replace("🍆", ":eggplant:"))
                     await ctx.send("Frase añadida!")
 
                 else:
