@@ -508,26 +508,24 @@ class EconomyCog(commands.Cog, name="Economy"):
         await ctx.send(embed=embed)
 
 
-#    @commands.command()
-#    async def addphrase(self, ctx):
-#        if ctx.message.author.guild_permissions.administrator:
-#            args = ctx.message.content.split()[1:]
-#
-#            if len(args) == 0:
-#                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
-#
-#            else:
-#                if "{amount}" in args:
-#                    f = open("src/bean/work_phrases.txt", 'a')
-#                    f.write(' '.join(args).replace("🍆", ":eggplant:") + "\n")
-#                    f.close()
-#                    await ctx.send("Frase añadida!")
-#
-#                else:
-#                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
-#
-#        else:
-#            return
+    @commands.command()
+    async def addphrase(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
+            args = ctx.message.content.split()[1:]
+
+            if len(args) == 0:
+                await ctx.send("Debes poner la frase, sustituyendo las ganancias por `{amount}`")
+
+            else:
+                if "{amount}" in args:
+                    pyMongoManager.add_work_phrase(' '.join(str(args)).replace("🍆", ":eggplant:"))
+                    await ctx.send("Frase añadida!")
+
+                else:
+                    await ctx.send("Debes sustituir las ganancias por `{amount}`")
+
+        else:
+            return
 
 
     @commands.command(aliases=['bj'])
