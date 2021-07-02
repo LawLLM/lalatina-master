@@ -12,11 +12,13 @@ import src.bean.CONSTANTS as CONSTANTS
 import pydeepl
 import requests
 
-#import modules.mongodb as mongodb
+import modules.mongodb as mongodb
 
-#pyMongoManager = mongodb.PyMongoManager()
+pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
+server = pyMongoManager.collection_guilds.find_one({"guild_id": 512830421805826048})
+TPREFIX = server['tprefix']
 
 session_dbg = aiohttp.ClientSession()
 session_dbl = aiohttp.ClientSession()
@@ -24,6 +26,8 @@ session_dbl = aiohttp.ClientSession()
 class BaseCog(commands.Cog, name="Base"):
     def __init__(self, bot):
         self.bot = bot
+        
+
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -42,8 +46,8 @@ class BaseCog(commands.Cog, name="Base"):
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
 
-        if message.content.startswith('<<') or message.content.startswith('<< '):
-            args = message.content.replace("<<", "").split(" ")[0:]
+        if message.content.startswith(TPREFIX) or message.content.startswith(TPREFIX):
+            args = message.content.replace(TPREFIX, "").split(" ")[0:]
 
             data = {
                 'auth_key': config.deepl_pass,

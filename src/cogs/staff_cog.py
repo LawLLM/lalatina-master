@@ -77,6 +77,19 @@ class StaffCog(commands.Cog, name="Staff"):
                         print(f'Role removido a {member.name}')
                     except:
                         print('Hummm')
+    
+    
+    @commands.command()
+    async def tprefix(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
+            args = ctx.message.content.split()[1:]
+            pyMongoManager.collection_guilds.update({"guild_id": 512830421805826048}, {"$set": {"tprefix": args[0]}})
+            await ctx.send(f"Prefix de la traducción cambiado a `{args[0]}`")
+        
+        else:
+            emojiNo = self.bot.get_emoji(753432948371357696)
+            await ctx.send(emojiNo)  
+            
 
 def setup(bot):
     bot.add_cog(StaffCog(bot))
