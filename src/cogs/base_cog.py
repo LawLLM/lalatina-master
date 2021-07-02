@@ -42,8 +42,8 @@ class BaseCog(commands.Cog, name="Base"):
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
 
-        if message.content.startswith('<') or message.content.startswith('< '):
-            args = message.content.replace("<", "").split(" ")[0:]
+        if message.content.startswith('<<') or message.content.startswith('<< '):
+            args = message.content.replace("<<", "").split(" ")[0:]
 
             data = {
                 'auth_key': config.deepl_pass,
