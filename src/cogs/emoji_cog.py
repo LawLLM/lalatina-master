@@ -25,10 +25,19 @@ class EmojiCog(commands.Cog, name="Emoji"):
             'a?': 757918565171986472,
             'chesscom': 856739513794297886,
             'chess24': 856739557349130250,
-            'lichess': 856739640727175169
+            'lichess': 856739640727175169,
+            'f': 855227960234344468,
+            'perdi': 852663438358347806,
+            'ah': 757918565171986472,
+            'no': 752651912951627786,
+            'nel': 752651912951627786,
+            'nope': 752651912951627786,
+            'nop': 752651912951627786,
+            'es menor': 859501615110291466
         }
         self.message_auto_reply = {
             'lalatina': 'https://media.tenor.com/images/37465eb4d7edea808a511abc18be5484/tenor.gif',
+            'lala': 'Es lalatina :c'
         }
     
     @commands.Cog.listener()
