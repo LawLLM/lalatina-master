@@ -12,7 +12,7 @@ import src.bean.CONSTANTS as CONSTANTS
 import pydeepl
 import requests
 
-import lib.mongodb as mongodb
+import src.lib.mongodb as mongodb
 
 pyMongoManager = mongodb.PyMongoManager()
 
