@@ -15,7 +15,7 @@ class TournamentCog(commands.Cog, name='Tournament'):
         self.bot = bot
 
 
-    @commands.command(aliases=['torneos', 'torneo'])
+    @commands.command(aliases=['torneos', 'torneo', 't'])
     async def tournaments(self, ctx):
         args = ctx.message.content.split()[1:]
         tt = ""
