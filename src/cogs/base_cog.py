@@ -17,8 +17,7 @@ import src.lib.mongodb as mongodb
 pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
-server = pyMongoManager.collection_guilds.find_one({"guild_id": 512830421805826048})
-TPREFIX = server['tprefix']
+
 
 session_dbg = aiohttp.ClientSession()
 session_dbl = aiohttp.ClientSession()
@@ -40,13 +39,15 @@ class BaseCog(commands.Cog, name="Base"):
     
     @commands.Cog.listener()
     async def on_message(self, message):
+        server = pyMongoManager.collection_guilds.find_one({"guild_id": 512830421805826048})
+        TPREFIX = server['tprefix']
         if message.author.bot or message.channel.type.name != "text":
             return
         
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
 
-        if message.content.startswith(TPREFIX) or message.content.startswith(TPREFIX):
+        if message.content.startswith(TPREFIX):
             args = message.content.replace(TPREFIX, "").split(" ")[0:]
 
             data = {
