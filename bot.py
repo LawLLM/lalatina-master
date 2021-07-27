@@ -28,6 +28,7 @@ initial_extensions = (
     'src.cogs.tournament_cog',
     'src.cogs.economy_cog',
     'src.cogs.role_cog',
+    'src.cogs.useful_cog',
 )
 
 
