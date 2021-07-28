@@ -29,6 +29,7 @@ initial_extensions = (
     'src.cogs.economy_cog',
     'src.cogs.role_cog',
     'src.cogs.useful_cog',
+    'src.cogs.help_cog',
 )
 
 
