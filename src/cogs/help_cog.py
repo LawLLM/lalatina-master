@@ -30,7 +30,7 @@ class HelpCog(commands.Cog, name='Help'):
 			embed.add_field(name="**Apuestas**", value="- blackjack / - bj\n", inline=True)
 			embed.add_field(name="**Torneos**", value="- tournaments / - torneos / - t\n", inline=True)
 			embed.add_field(name="**Otros Comandos**", value="- ytsearch / - yt\n", inline=True)
-			
+			await ctx.send(embed=embed)
 		
 		elif arg == "setbirthday":
 			embed.description=f"Usa **{PREFIX}setbirthday <fecha>** para registrar o actualizar tu fecha de cumpleaños\nPuedes cambiar tu fecha hasta un máximo de 3 veces"
