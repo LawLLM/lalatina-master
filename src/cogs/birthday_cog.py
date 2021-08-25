@@ -63,9 +63,9 @@ class BirthdayCog(commands.Cog, name="Birthday"):
                 else:
                     profile = pyMongoManager.get_profile(ctx.author.id)
 
-                    if profile['birthday_number_attemps'] > 0:
+                    if profile['birthday_number_attemps'] < 2:
                         pyMongoManager.update_birthday(ctx.author.id, numbers_list[0], numbers_list[1])
-                        remaining_attemps = profile['birthday_number_attemps']-1
+                        remaining_attemps = 1 - profile['birthday_number_attemps']
                         if remaining_attemps == 0:
                             text_end = 'Ya no podrás cambiar tu fecha de cumpleaños.'
                         else:
