@@ -50,8 +50,9 @@ class EmojiCog(commands.Cog, name="Emoji"):
             emoji = self.bot.get_emoji(self.emoji_auto_reaction_id[content_lower])
             await message.add_reaction(emoji)
         elif content_lower in self.message_auto_reply.keys():
-            text = self.message_auto_reply[content_lower]
-            await message.channel.send(text)
+            if message.author.id != 489144684371771392:
+                text = self.message_auto_reply[content_lower]
+                await message.channel.send(text)
         
 
     @commands.command()
