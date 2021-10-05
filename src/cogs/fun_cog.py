@@ -29,7 +29,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
     def __init__(self, bot):
         self.bot = bot
 
-        self.reaction_count_min = 2
+        self.reaction_count_min = 5
 
         self.star_board_dict = {}       # original_message_id: { startbaord_channel_message_id, emoji_id}
         self.auto_reaction_dict = {}    # emoji -> reaction
