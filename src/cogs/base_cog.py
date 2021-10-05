@@ -9,7 +9,7 @@ import config
 
 import src.bean.CONSTANTS as CONSTANTS
 
-import pydeepl
+#import pydeepl
 import requests
 
 import src.lib.mongodb as mongodb
@@ -17,6 +17,7 @@ import src.lib.mongodb as mongodb
 pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
+TPREFIX = config.TPREFIX
 
 
 session_dbg = aiohttp.ClientSession()
@@ -26,6 +27,13 @@ class BaseCog(commands.Cog, name="Base"):
     def __init__(self, bot):
         self.bot = bot
         
+        self.message_auto_reply = {}
+
+        auto_reply_list = pyMongoManager.get_all_auto_reply()
+        
+        for item in auto_reply_list:
+            self.message_auto_reply[item['tag']] = item['message_reply']
+
 
 
     @commands.Cog.listener()
@@ -39,15 +47,18 @@ class BaseCog(commands.Cog, name="Base"):
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        server = pyMongoManager.collection_guilds.find_one({"guild_id": 512830421805826048})
-        TPREFIX = server['tprefix']
         if message.author.bot or message.channel.type.name != "text":
             return
         
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
+        
+        elif message.content.lower() in self.message_auto_reply.keys():
+            if message.author.id != 489144684371771392:
+                text = self.message_auto_reply[message.content.lower()]
+                await message.channel.send(text)
 
-        if message.content.startswith(TPREFIX):
+        elif message.content.startswith(TPREFIX):
             args = message.content.replace(TPREFIX, "").split(" ")[0:]
 
             data = {
@@ -56,12 +67,13 @@ class BaseCog(commands.Cog, name="Base"):
                 'target_lang': 'ES'
             }
 
-            response = requests.post('https://api-free.deepl.com/v2/translate', data=data)
-            await message.channel.send(response.json()["translations"][0]["text"])
+            async with aiohttp.ClientSession() as session:
+                async with session.post(f'https://api-free.deepl.com/v2/translate', data=data) as resp:
+                    if resp.status == 200:
+                        data_json = await resp.json()
+                        text_translation = data_json["translations"][0]["text"]
 
-
-
-
+                        await message.channel.send(text_translation)
 
 
 
@@ -125,9 +137,8 @@ class BaseCog(commands.Cog, name="Base"):
                     await ctx.send('This command requieres: **Embed Links** permission in this channel')
                     return
 
-#        if isinstance(error, discord.errors.MissingPermissions):
-#            await ctx.send("No tengo suficientes permisos")
-
+        """if isinstance(error, discord.errors.MissingPermissions):
+            await ctx.send("No tengo suficientes permisos")"""
 
         text_0 = f'Author: {ctx.author} ({ctx.author.id})'
 
@@ -153,6 +164,7 @@ class BaseCog(commands.Cog, name="Base"):
     
         for parrafo in parrafos_list:
             await channel_fails.send(f'```py\n{parrafo}```')
+
 
 
 def setup(bot):

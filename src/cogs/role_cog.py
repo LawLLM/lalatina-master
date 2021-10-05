@@ -4,6 +4,7 @@ from discord.ext import commands
 import discord.utils as dutils
 
 import src.lib.mongodb as mongodb
+import src.controller.utils as utils
 
 pyMongoManager = mongodb.PyMongoManager()
 
@@ -46,86 +47,20 @@ class RoleCog(commands.Cog, name="Role"):
                         await ctx.send(f"**{ctx.author.name}** you already have **{role_query}** role")
                     else:
                         await ctx.author.add_roles(role)
+                        
                         await ctx.send(f"**{ctx.author.name}** you now have **{role_query}** role")
+
+                        role_colour = role.colour
+                        HEX_color = utils.RGB_to_HEX(role_colour.r, role_colour.g, role_colour.b)
+
+                        self.bot.set_embed_color(ctx.author.id, HEX_color)
+                        pyMongoManager.set_embed_color(ctx.author.id, HEX_color)
                 else:
                     await ctx.send(f"The role **{role_query}** is not self-assignable.")
             else:
                 await ctx.send(f"There is no role named **{role_query}**")
         else:
             await ctx.send("Specify a role")
-
-
-    @commands.command()
-    async def iamnot(self, ctx):
-        #TODO: GESTION DE ERRORES (PERMISO PARA MANEJAR ROLES)
-        role_query = " ".join(ctx.message.content.split()[1:])
-        
-        if role_query:
-            role = dutils.get(ctx.guild.roles, name=role_query)
-
-            if role:
-                if role.id in getIdRolesSelfAssignable(ctx.guild.id):
-                    #member = ctx.guild.get_member(ctx.author.id)
-                    
-                    if role in ctx.author.roles:
-                        await ctx.author.remove_roles(role)
-                        await ctx.send(f"**{ctx.author.name}** you no longer have **{role_query}** role.")
-                    else:
-                        await ctx.send(f"**{ctx.author.name}** you don't have **{role_query}** role.")
-                else:
-                    await ctx.send(f"The role **{role_query}** is not self-assignable.")
-            else:
-                await ctx.send(f"There is no role named **{role_query}**")
-        else:
-            await ctx.send("Specify a role")
-
-    """@commands.command()
-    async def addassignablerole(self, ctx):
-        #member = ctx.guild.get_member(ctx.author.id)
-        
-        if ctx.author.permissions_in(ctx.channel).administrator:
-            role_query = " ".join(ctx.message.content.split()[1:])
-            
-            if role_query:
-                role = dutils.get(ctx.guild.roles, name=role_query)
-
-                if role:
-                    if role.id in roleGroup.getIdRolesSelfAssignable(ctx.guild.id):
-                        await ctx.send(f"**{role_query}** is already self-assignable role")
-                    else:
-                        pyMongoManager.update_discord_guild_push_sar(ctx.guild.id, role.id)
-                        await ctx.send(f"**{role_query}** is now a self-assignable role.")
-                else:
-                    await ctx.send(f"There is no role named {role_query}**")
-            else:
-                await ctx.send("Specify a role")
-        else:
-            await ctx.send("Command only for administrators")
-
-    @commands.command()
-    async def removeassignablerole(self, ctx):
-        member = ctx.guild.get_member(ctx.author.id)
-        
-        if member.permissions_in(ctx.channel).administrator:
-            role_query = " ".join(ctx.message.content.split()[1:])
-            
-            if role_query:
-                role = dutils.get(ctx.guild.roles, name=role_query)
-
-                if role:
-                    if role.id in roleGroup.getIdRolesSelfAssignable(ctx.guild.id):
-                        pyMongoManager.update_discord_guild_pull_sar(ctx.guild.id, role.id)
-                        await ctx.send(f"**{role_query}** is no longer a self-assignable role")
-                    else:
-                        await ctx.send(f"That role is not self-assignable.")
-                else:
-                    await ctx.send(f"There is no role named {role_query}**")
-            else:
-                await ctx.send("Specify a role")
-        else:
-            await ctx.send("Command only for administrators")
-    """
-
 
 
 def setup(bot):

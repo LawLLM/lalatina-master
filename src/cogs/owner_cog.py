@@ -21,7 +21,8 @@ class OwnerCog(commands.Cog, name="Owner"):
     @commands.command()
     async def evaluar(self, ctx):
         args = ctx.message.content.split()[1:]
-        if ctx.author.id not in config.owners_id:
+
+        if ctx.author.id not in self.bot.get_panchessco_staff_id_list():
             return
 
         texto = " ".join(args)

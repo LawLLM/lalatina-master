@@ -23,13 +23,18 @@ class HelpCog(commands.Cog, name='Help'):
 
 
 		if not arg:
-			embed.description=f"Usa **{PREFIX}h** <comando> para ver más información detallada sobre él"
-			embed.add_field(name="**Cumpleaños**", value="- setbirthday\n - calendar", inline=True)
-			embed.add_field(name="**Roles**", value="- iam\n - iamnot", inline=True)
-			embed.add_field(name="**Economía**", value="- shop\n - buy\n - use\n - inventory / - inv\n - givemoney\n - top\n - work", inline=True)
-			embed.add_field(name="**Apuestas**", value="- blackjack / - bj\n", inline=True)
-			embed.add_field(name="**Torneos**", value="- tournaments / - torneos / - t\n", inline=True)
-			embed.add_field(name="**Otros Comandos**", value="- ytsearch / - yt\n", inline=True)
+			embed.description=f"Usa `{PREFIX}help <comando>` para ver más información detallada"
+			embed.add_field(name="Cumpleaños", value="`setbirthday` `calendar`", inline=False)
+			embed.add_field(name="Roles (colores)", value="`iam` `iamnot`", inline=False)
+			#embed.add_field(name="Economía", value="- shop\n - buy\n - use\n - inventory / - inv\n - givemoney\n - top\n - work", inline=False)
+			#embed.add_field(name="Economía", value="_En desarrollo_", inline=False)
+			#embed.add_field(name="Apuestas", value="`blackjack`", inline=False)
+			embed.add_field(name="Torneos", value="`torneos`", inline=False)
+			embed.add_field(name="Otros Comandos", value="`yt` `autoreactionlist` `autoreplylist`", inline=False)
+
+			if ctx.author.id in self.bot.get_panchessco_staff_id_list():
+				embed.add_field(name="Config", value="`addautoreaction` `deleteautoreaction` `addautoreply` `deleteautoreply`")
+
 			await ctx.send(embed=embed)
 		
 		elif arg == "setbirthday":
@@ -44,7 +49,7 @@ class HelpCog(commands.Cog, name='Help'):
 
 		elif arg in ('iam', 'iamnot'):
 			cnl = self.bot.get_channel('652653246795481121')
-			embed.description=f"Los comandos `iam` y `iamnot` sirven para dar o quitar roles de colores ({cnl.mention})"
+			embed.description=f"Los comandos `iam` sirven para dar o quitar roles de colores ({cnl.mention})"
 			await ctx.send(embed=embed)
 
 		elif arg == 'shop':
