@@ -72,7 +72,7 @@ class PanchesscoBot(commands.AutoShardedBot):
         try:
             hex_color = self.embed_colors[user_id]
         except:
-            hex_color = '#e3d9a4'       # Color del cabello de Darkness
+            hex_color = '#E3D9A4'       # Color del cabello de Darkness
         
         if hex_color == "#FFFFFF":
             hex_color = "#FFFFFE"
