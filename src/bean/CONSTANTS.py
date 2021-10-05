@@ -1,4 +1,7 @@
 
+URL_TEAM_LICHESS = "https://lichess.org/team/panchessco"
+URL_TEAM_CHESSCOM = "https://www.chess.com/club/team-konosuba"
+
 ID_EMOJI_FANTASMITA = 764856174553595995
 
 MAX_DAYS_BY_MONTH = {
