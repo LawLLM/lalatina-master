@@ -35,6 +35,10 @@ class PyMongoManager:
 #        self.collection_chess_games = self.db_discord['chess_games']
 
         self.collection_guilds = self.db_discord['guild']
+        
+        self.collection_star_board = self.db_discord['starboard']
+        self.collection_auto_reaction = self.db_discord['auto_reaction']
+        self.collection_auto_reply = self.db_discord['auto_reply']
 
         self.shop = self.db_discord['shop']
 
@@ -48,13 +52,13 @@ class PyMongoManager:
             "panchessco_money": 0,                      # Economy - Customize
             'legend_start_time': None,
             'legend_times': 0,
-            'inventory': {}
+            'inventory': {},
+            'embed_color': None,
         }
 
         self.guild_base = {
             "guild_id": None,
-            "prefix": 'la!',
-            "work_time": 300
+            "work_time": 300,
         }
 
         self.object_base = {
@@ -72,6 +76,96 @@ class PyMongoManager:
             "refund": False
         }
 
+        self.starboard_base = {
+            "original_message_id": None, #int
+            "starboard_channel_message_id": None,
+            "emoji_id": None
+        }
+
+        self.auto_reaction_base = {
+            "message_base": None,
+            "emoji_id": None
+        }
+
+        self.auto_reply_base = {
+            "tag": None,
+            "message_reply": None
+        }
+
+
+    # NUEVAS COSAS
+
+    def get_all_starboard(self):
+        return list(self.collection_star_board.find())
+
+    def get_all_auto_reaction(self):
+        return list(self.collection_auto_reaction.find())
+    
+    def get_all_auto_reply(self):
+        return list(self.collection_auto_reply.find())
+    
+    def add_star_board(self, original_message_id, starboard_channel_message_id, emoji_id):
+        myQuery = {'original_message_id': original_message_id}
+
+        if self.collection_star_board.count_documents(myQuery, limit=1):
+            newValues = {'$set': {'starboard_channel_message_id': starboard_channel_message_id, 'emoji_id': emoji_id}}
+            self.collection_star_board.update_one(myQuery, newValues)
+        else:
+            newData = copy.deepcopy(self.starboard_base)
+            newData['original_message_id'] = original_message_id
+            newData['starboard_channel_message_id'] = starboard_channel_message_id
+            newData['emoji_id'] = emoji_id
+            
+            self.collection_star_board.insert_one(newData)
+
+    def get_auto_reaction(self, frase):
+        myQuery = {'message_base': frase}
+
+        return self.collection_auto_reaction.find_one(myQuery)
+
+    def add_auto_reaction(self, frase, emoji_id):
+        myQuery = {'message_base': frase}
+
+        if self.collection_auto_reaction.count_documents(myQuery, limit=1):
+            newValues = {'$set': {'emoji_id': emoji_id}}
+            self.collection_auto_reaction.update_one(myQuery, newValues)
+        else:
+            newData = copy.deepcopy(self.auto_reaction_base)
+            newData['message_base'] = frase
+            newData['emoji_id'] = emoji_id
+            
+            self.collection_auto_reaction.insert_one(newData)
+
+    def delete_auto_reaction(self, frase):
+        myQuery = {'message_base': frase}
+
+        if self.collection_auto_reaction.count_documents(myQuery, limit=1):
+            self.collection_auto_reaction.delete_one(myQuery)
+    
+    def get_auto_reply(self, tag):
+        myQuery = {'tag': tag}
+
+        return self.collection_auto_reply.find_one(myQuery)
+
+    def add_auto_reply(self, tag, frase):
+        myQuery = {'tag': tag}
+
+        if self.collection_auto_reply.count_documents(myQuery, limit=1):
+            newValues = {'$set': {'message_reply': frase}}
+            self.collection_auto_reply.update_one(myQuery, newValues)
+        else:
+            newData = copy.deepcopy(self.auto_reply_base)
+            newData['tag'] = tag
+            newData['message_reply'] = frase
+            
+            self.collection_auto_reply.insert_one(newData)
+
+    def delete_auto_reply(self, tag):
+        myQuery = {'tag': tag}
+
+        if self.collection_auto_reply.count_documents(myQuery, limit=1):
+            self.collection_auto_reply.delete_one(myQuery)
+        
 
     # GUILD
 
@@ -166,12 +260,12 @@ class PyMongoManager:
             self.collection_chess_players.insert_one(newData)
 
     def get_time_remaining(self):
-        myQuery = {'guild_id': 512830421805826048}
+        myQuery = {'guild_id': config.panchessco_id}
         result = self.collection_guilds.find_one(myQuery)
         return int(result['work_time'])
     
     def add_work_phrase(self, phrase):
-        self.collection_guilds.update({'guild_id': 512830421805826048}, {'$push': {'work_phrases': phrase}})
+        self.collection_guilds.update({'guild_id': config.panchessco_id}, {'$push': {'work_phrases': phrase}})
         
 
     # PROFILE
@@ -212,6 +306,9 @@ class PyMongoManager:
 
         return result
 
+    def get_all_profiles(self):
+        return list(self.collection_profiles.find({}))
+
     def update_legend(self, user_id):
         myQuery = {'user_id': user_id}
 
@@ -240,6 +337,19 @@ class PyMongoManager:
             newData['birthday_date_day'] = day
             newData['birthday_date_month'] = month
             newData['birthday_number_attemps'] = 1
+
+            self.collection_profiles.insert_one(newData)
+    
+    def set_embed_color(self, user_id, hex_color):
+        myQuery = {'user_id': user_id}
+
+        if self.collection_profiles.count_documents(myQuery, limit=1):
+            newValues = {'$set': {'embed_color': hex_color}}
+            self.collection_profiles.update_one(myQuery, newValues)
+        else:
+            newData = copy.deepcopy(self.profile_base)
+            newData['user_id'] = user_id
+            newData['embed_color'] = hex_color
 
             self.collection_profiles.insert_one(newData)
 
@@ -327,11 +437,9 @@ class PyMongoManager:
 
     
     # GUILDS
+    
 
-    def get_panchessco_prefix(self):
-        myQuery = {"guild_id": 512830421805826048}
-        result = self.collection_guilds.find_one(myQuery)
-        return result['prefix']
+
 
     def update_discord_guild_push_sar(self, guild_id, newData):
         myQuery = {"guild_id": guild_id}
