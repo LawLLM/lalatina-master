@@ -26,15 +26,6 @@ session_dbl = aiohttp.ClientSession()
 class BaseCog(commands.Cog, name="Base"):
     def __init__(self, bot):
         self.bot = bot
-        
-        self.message_auto_reply = {}
-
-        auto_reply_list = pyMongoManager.get_all_auto_reply()
-        
-        for item in auto_reply_list:
-            self.message_auto_reply[item['tag']] = item['message_reply']
-
-
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -52,12 +43,6 @@ class BaseCog(commands.Cog, name="Base"):
         
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
-        
-        elif message.content.lower() in self.message_auto_reply.keys():
-            if message.author.id != 489144684371771392:
-                text = self.message_auto_reply[message.content.lower()]
-                await message.channel.send(text)
-
         elif message.content.startswith(TPREFIX):
             args = message.content.replace(TPREFIX, "").split(" ")[0:]
 
