@@ -23,7 +23,7 @@ def inspeccionar(objeto):
 class PyMongoManager:
     def __init__(self):
         self.client = pymongo.MongoClient(config.mongoDb_connection)
-        self.db_discord = self.client['db_panchessco']
+        self.db_discord = self.client['db_test']
 
 #        self.collection_puzzles = self.db_discord['puzzles']
 #
@@ -35,7 +35,7 @@ class PyMongoManager:
 #        self.collection_chess_games = self.db_discord['chess_games']
 
         self.collection_guilds = self.db_discord['guild']
-        
+        self.collection_shop = self.db_discord['shop']
         self.collection_star_board = self.db_discord['starboard']
         self.collection_auto_reaction = self.db_discord['auto_reaction']
         self.collection_auto_reply = self.db_discord['auto_reply']
@@ -66,14 +66,12 @@ class PyMongoManager:
             "key": None,
             "value": 0,
             "description": None,
-            "lot": None,
-            "oldRoleAdded": 0,
-            "newRoleAdded": False,
-            "roleRemoved": 0,
-            "channel_id": 0,
+            "image": None,
             "message": None,
-            "log": False,
-            "refund": False
+            "stock": None,
+            "roleAdded": None,
+            "roleRemoved": None,
+            "roleRequired": None,
         }
 
         self.starboard_base = {
@@ -267,6 +265,8 @@ class PyMongoManager:
     def add_work_phrase(self, phrase):
         self.collection_guilds.update({'guild_id': config.panchessco_id}, {'$push': {'work_phrases': phrase}})
         
+    def get_items(self):
+        return list(self.collection_shop.find())
 
     # PROFILE
     
