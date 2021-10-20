@@ -4,6 +4,8 @@ import discord
 from discord.ext import commands
 import copy
 
+import discord.utils as dutils
+
 import aiohttp
 import math
 
@@ -14,7 +16,7 @@ import config
 from src.bean.CONSTANTS import *
 
 import random
-
+import math
 
 #import modules.CONSTANTS_IMAGES as CONSTANTS_IMAGES
 
@@ -35,27 +37,38 @@ class EconomyCog(commands.Cog, name="Economy"):
 
     @commands.command()
     async def shop(self, ctx):
-        list_objects = list(pyMongoManager.shop.find())
-        list_objects.sort(key=lambda x: x['value'])
+        args = ctx.message.content.split()[1:]
 
-        num_pages = math.ceil((len(list_objects)/10))
+        items = pyMongoManager.get_items()
+        num_pages = math.ceil(len(items)/10)
+        page=1
 
 
 
-        for x in range(1, num_pages+1):
-            embed = discord.Embed()
-            embed.colour = discord.Color.from_rgb(230, 126, 34)
-            text = ""
-            for i in list_objects[x*10-10:x*10]:
-                text += f"**{i['name'].capitalize()}** - {i['value']} :eggplant:\n"
-                text += f"{i['description']}\n\n"
 
-            embed.description = text
-            embed.set_footer(text=f"Página {x} de {num_pages}")
-            await ctx.send(embed=embed)
+        if len(args) > 0 and args[0].isdigit():
+            page = int(args[0])
+            if page > num_pages:
+                page=num_pages
+            elif page <= 0:
+                page=1
+        
+        list_items = items[(page*10)-10:page*10]
+        embed = discord.Embed()
+        embed.set_author(name="Tienda de panchessco", icon_url=ctx.guild.icon_url)
+        embed.colour = self.bot.get_embed_color(ctx.author.id)
 
-        await ctx.message.delete()
+        text = "\n"
+        for item in list_items:
+        	text += f"{item['name']} - {item['value']} :eggplant:\n*{item['description']}*\n\n\n"
+        
+        embed.description = text
+        embed.set_footer(text=f"Página {page}/{num_pages}")
+        await ctx.send(embed=embed)
+        
 
+        
+        
 
 
     @commands.command()
@@ -65,8 +78,6 @@ class EconomyCog(commands.Cog, name="Economy"):
         user = pyMongoManager.get_profile(ctx.author.id)
 
 
-        channel_logs = self.bot.get_channel(config.channel_logs_id)
-
         C_trencada = self.bot.get_emoji(555903896363466762)
         ded = self.bot.get_emoji(633063734721380403)
 
@@ -75,10 +86,16 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         else:
             cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó","o").replace("ú", "u").replace(" ", "").replace(".", "")
+            
             obj = pyMongoManager.shop.find_one({"key": cons})
-
-            if obj:
-                if obj['lot'] == 0:
+            
+            if obj is not None:
+                if obj['roleRequired'] is not None:
+                    role = ctx.guild.get_role(obj['roleRequired'])
+                    if role not in ctx.author.roles:
+                        await ctx.send(f"Lo sentimos, pero no puedes comprar `{obj['name']}` si no tienes el rol `{role.name}`")
+                        return
+                if obj['stock'] == 0:
                     await ctx.send(f"No queda `{obj['name']}` en la tienda {C_trencada}")
 
                 else:
@@ -86,9 +103,13 @@ class EconomyCog(commands.Cog, name="Economy"):
                     if user['panchessco_money'] >=  obj['value']:
                         user['panchessco_money'] -= obj['value']
 
-                        if obj['lot'] is not None:
-                            quantity = obj['lot']-1
-                            pyMongoManager.collection_profiles.update_one({'name': obj['name']}, {"$set":{"lot":quantity}})
+                        if obj['stock'] is not None:  
+                            if obj['stock'] == 1:
+                                pyMongoManager.shop.delete_one({'name': obj['name']})
+                                await ctx.message.channel.send(f"Ya no quedan más `{obj['name']}`")
+                            else:
+                                pyMongoManager.shop.find_one_and_update({'name':obj['name']}, {"$inc": {"stock": -1}})
+                                await ctx.message.channel.send(f"Número de `{obj['name']}` disponibles: `{obj['stock']-1}`")
 
                         if obj['name'] in user['inventory']:
                             user['inventory'][obj['name']] += 1
@@ -96,8 +117,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                         else:
                             user['inventory'][obj['name']] = 1
 
-                        if obj['log'] is True:
-                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha comprado el objeto `{obj['name']}`")
+
 
                         pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
 
@@ -107,7 +127,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                         await ctx.send("No tienes suficientes :eggplant:")
 
             else:
-                await ctx.send("No se han encontrado el objeto")
+                await ctx.send("No se ha encontrado el objeto")
 
 
 
@@ -117,65 +137,58 @@ class EconomyCog(commands.Cog, name="Economy"):
     async def use(self, ctx):
         args = ctx.message.content.split()[1:]
 
+        if len(args) == 0:
+            await ctx.send("Uso correcto -> la!use <nombre_objeto>")
+            return
+
         cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
         obj = pyMongoManager.shop.find_one({"key": cons})
         user = pyMongoManager.get_profile(ctx.author.id)
 
-        channel_logs = self.bot.get_channel(config.channel_logs_id)
 
-        if obj['name'] in user['inventory']:
+        if obj is None:
+            await ctx.send("No se ha encontrado el objeto")
+            return
+
+        if len(user['inventory']) == 0:
+            await ctx.send(f"No tienes `{obj['name']}` en el inventario")
+            return
+
+        if obj['name'] not in user['inventory'].keys() or user['inventory'][obj['name']] == 0:
+            await ctx.send(f"No tienes `{obj['name']}` en el inventario")
+            return
+        
+        user['inventory'][obj['name']] -= 1
+        if user['inventory'][obj['name']] == 0:
+            del user['inventory'][obj['name']]
 
 
-            if user['inventory'][obj['name']] > 0:
-
-
-                if obj['oldRoleAdded'] != 0:
-                    role = ctx.guild.get_role(obj['oldRoleAdded'])
-                    if role not in ctx.author.roles:
-                        await ctx.author.add_roles(role)
-
-                        if obj['log'] is True:
-                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha recibido el rol {role.name}")
-
-                    else:
-                        await ctx.send("Ya posees ese rol")
-
-                if obj['newRoleAdded'] != 0:
-                    await ctx.send("¿Qué nombre quieres ponerle al rol?")
-                    msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=3600)
-                    await ctx.guild.create_role(name=msg)
-                    roleCreated = ctx.guild.get_role(name=msg)
-                    if roleCreated in ctx.author.roles:
-                        await ctx.send("Ya posees ese rol")
-                    else:
-                        if obj['log'] is True:
-                            await channel_logs.send(f"El usuario **{ctx.author.name}** ha creado y recibido el rol {roleCreated.name} por la compra de `{obj['name']}`")
-                        await ctx.author.add_roles(roleCreated)
-                        await ctx.send("Rol añadido")
-
-                if obj['roleRemoved'] != 0:
-                    roleRemoved = ctx.guild.get_role(obj['roleRemoved'])
-                    if roleRemoved in ctx.author.roles:
-                        await ctx.author.remove_roles(roleRemoved)
-                        if obj['log'] is True:
-                            await channel_logs.send(f"El rol {roleRemoved.name} ha sido removido del usuario **{ctx.author.name}** por la compra de `{obj['name']}`")
-                    else:
-                        await ctx.send("No se ha encontrado el rol a eliminar")
-
-                if obj['channel_id'] != 0:
-                    channelToSend = ctx.guild.get_channel(obj['channel_id'])
-                    await channelToSend.send(obj['message'])
-                    if obj['log'] is True:
-                        await channel_logs.send(f"El usuario **{ctx.author.name}** ha comprado el objeto `{obj['name']}`")
-
-                user['inventory'][cons] -= 1
-                pyMongoManager.collection_profiles.replace_one({"user_id": ctx.author.id}, user)
-
+        if obj['message'] is not None:
+            await ctx.send(obj['message'])
+        
+        if obj['roleAdded'] is not None:
+            role = dutils.get(ctx.guild.roles, id=obj['roleAdded'])
+            if role in ctx.author.roles:
+                await ctx.send(f"Ya tienes el rol `{role.name}`")
+                if obj['message'] is None:
+                    return
+            else:    
+                await ctx.author.add_roles(role)
+                await ctx.send(f"Has recibido el rol `{role.name}`")
+        
+        if obj['roleRemoved'] is not None:
+            role = dutils.get(ctx.guild.roles, id=obj['roleRemoved'])
+            if role not in ctx.author.roles:
+                await ctx.send(f"No tienes el rol `{role.name}`")
+                if obj['message'] is None:
+                    return
             else:
-                await ctx.send(f"No tienes `{obj['name']}`")
+                await ctx.author.remove_roles(role)
+                await ctx.send(f"Se te ha eliminado el rol `{role.name}`")
 
-        else:
-            await ctx.send("No tienes o no se ha encontrado el objeto seleccionado")
+
+        
+        pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
 
 
 
@@ -210,7 +223,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
         embed = discord.Embed()
-        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.colour = self.bot.get_embed_color(ctx.author.id)
         embed.title = f"Inventario de {member.name}"
 
         text = ""
@@ -231,129 +244,218 @@ class EconomyCog(commands.Cog, name="Economy"):
 
     
 
-    @commands.command(aliases=['add_item', 'add_object', 'co'])
-    async def createobject(self, ctx):
+    @commands.command()
+    async def additem(self, ctx):
 
         obj = pyMongoManager.object_base
+        stock = False
+        roleAd = False
+        roleRe = False
+        roleReq = False
+        img = False
+        msgS = False
 
-        await ctx.send("¿Qué nombre quieres ponerle?")
+        await ctx.send("*Las preguntas opcionales se podrán saltar escribiendo `s`*\n*Pon `exit`  en cualquier momento para cancelar*")
+
+        await ctx.send("Nombre:")
         try:
             name = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
+            if name.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
             obj['name'] = name.content
             obj['key'] = name.content.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
 
-        await ctx.send("¿Qué valor tendrá?")
+        await ctx.send("Valor:")
         try:
             value = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
+            if value.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
             obj['value'] = int(value.content)
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
 
-        await ctx.send("Escribe la descripción:")
+        await ctx.send("Descripción:")
         try:
             description = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
+            if description.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
             obj['description'] = description.content
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
+        
+        await ctx.send("Imagen: (opcional)")
+        try:
+            image = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+            if image.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
+            if image.content != "s":
+                asdf = image.attachments[0].url
+                obj['image'] = asdf
+                img = True
 
-        await ctx.send(f"¿Cuántos {name.content} habrá en la tienda? Si no quieres que haya límite, pon `s`")
+            
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return      
+
+        await ctx.send("Mensaje mandado al usarlo: (opcional)")
+        try:
+            msg = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+            if msg.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
+            if msg.content != "s":
+                msgS = True
+                obj['message'] = msg.content
+        except asyncio.TimeoutError:
+            await ctx.send("Tiempo agotado")
+            return
+
+        await ctx.send(f"Cantidad de `{name.content}` en la tienda (opcional)")
         try:
             lot = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
+            if lot.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
             if lot.content != "s":
                 if lot.content.isdigit():
-                    obj['lot'] = int(lot.content)
+                    stock = True
+                    obj['stock'] = int(lot.content)
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
 
-        await ctx.send("¿Qué rol otorgará el objeto? Si no quieres que de ninguno, pon `s`")
+        await ctx.send("Rol otorgado al usarlo: (opcional)")
         try:
-            oldRoleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and len(message.role_mentions) > 0 or message.content == "s", timeout=600)
-
-            if oldRoleAdded.content != "s":
-                obj['oldRoleAdded'] = oldRoleAdded.role_mentions[0].id
+            roleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+            if roleAdded.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
+            if roleAdded.content != "s":
+                roleAd = True
+                if roleAdded.content.isdigit():
+                    obj['roleAdded'] = int(roleAdded.content)
+                else:
+                    obj['roleAdded'] = roleAdded.role_mentions[0].id
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
 
-        await ctx.send("¿Quieres que el objeto permita crear un rol personalizado?")
+#        await ctx.send("¿Quieres que el objeto permita crear un rol personalizado?")
+#        try:
+#            newRoleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+#
+#            if newRoleAdded.content.lower() in ("yes", "si", "see", "s"):
+#                obj['newRoleAdded'] = True
+#        except asyncio.TimeoutError:
+#            await ctx.send("Tiempo agotado")
+#            return
+
+        await ctx.send(f"Rol removido al usarlo: (opcional)")
         try:
-            newRoleAdded = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
-            if newRoleAdded.content.lower() in ("yes", "si", "see", "s"):
-                obj['newRoleAdded'] = True
-        except asyncio.TimeoutError:
-            await ctx.send("Tiempo agotado")
-            return
-
-        await ctx.send(f"¿Qué rol quieres que `{obj['name']}` elimine un rol de un usuario? Si no quieres que quite ningún rol, pon `s`")
-        try:
-            roleRemoved = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author and len(message.role_mentions) > 0 or message.content == "s", timeout=600)
-
+            roleRemoved = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+            if roleRemoved.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
             if roleRemoved.content != "s":
+                roleRe = True
+                if roleRemoved.content.isdigit():
+                    obj['roleRemoved'] = int(roleRemoved.content)
                 obj['roleRemoved'] = roleRemoved.role_mentions[0].id
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
             return
 
-        await ctx.send("¿En qué canal quieres que envíe un mensaje? Si no quieres, pon `s`")
+
+
+        await ctx.send("Rol requerido para comprarlo: (opcional)")
         try:
-            channel_id = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
-            if channel_id.content.lower() != "s":
-                obj['channel_id'] = int(channel_id.content)
-
-                await ctx.send("Introduce el mensaje a enviar")
-                message = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
-
-                obj['message'] = message.content
+            roleRequired = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+            if roleRequired.content == "exit":
+                await ctx.send("Comando cancelado")
+                return
+            if roleRequired.content != "s":
+                roleReq = True
+                if roleRequired.content.isdigit():
+                    obj['roleRequired'] = int(roleRequired.content)
+                obj['roleRequired'] = roleRequired.role_mentions[0].id
         except asyncio.TimeoutError:
             await ctx.send("Tiempo agotado")
-            return
+            return        
 
-        await ctx.send("¿Quieres que se notifique en el canal <#835391694215053352> cuando alguien adquiera el objeto o cuando se le de un rol por su uso?")
-        try:
-            log = await self.bot.wait_for('message', check=lambda message: message.author == ctx.author, timeout=600)
+        
+        pyMongoManager.shop.insert_one(obj)
+        
 
-            if log.content.lower() in ("yes", "si", "see", "s"):
-                obj['log'] = True
+        embed = discord.Embed(title="Nuevo objeto añadido a la tienda\n")
+        embed.colour = self.bot.get_embed_color(ctx.author.id)
+        if img:
+            embed.set_thumbnail(url=obj['image'])
 
-            pyMongoManager.shop.insert_one(obj)
-            await ctx.send(f"{obj['name']} creado!")
-        except asyncio.TimeoutError:
-            await ctx.send("Tiempo agotado")
-            return
+        embed.add_field(name="Nombre:", value=obj['name'])
+        embed.add_field(name="Descripción:", value=obj['description'], inline=True)
+        embed.add_field(name="Valor:", value=f"{obj['value']} :eggplant:")
+
+        if stock:
+            embed.add_field(name="Disponibles:", value=obj['stock'])
+        else:
+            embed.add_field(name="Disponibles:", value="Infinitos")
+
+        if roleAd:
+            role1 = ctx.guild.get_role(obj['roleAdded'])
+            embed.add_field(name="Rol otorgable:", value=role1.mention)
+        else:
+            embed.add_field(name="Rol otorgable:", value="Ninguno")
+
+        if roleRe:
+            role2 = ctx.guild.get_role(obj['roleRemoved'])
+            embed.add_field(name="Rol eliminable:", value=role2.mention)
+        else:
+            embed.add_field(name="Rol eliminable:", value="Ninguno")
+        
+        if roleReq:
+            role3 = ctx.guild.get_role(obj['roleRequired'])
+            embed.add_field(name="Rol requerido:", value=role3.mention)
+        else:
+            embed.add_field(name="Rol requerido:", value="Ninguno")
+        
+        if msgS:
+            embed.add_field(name="Mensaje:", value=obj['message'])
+        else:
+            embed.add_field(name="Mensaje:", value="Ninguno")
 
 
+        await ctx.send(embed=embed)
 
 
 
     @commands.command(aliases=['give-money', 'give', 'gm'])
     async def givemoney(self, ctx):
         args = ctx.message.content.split()[1:]  # User - Amount
-        print(args)
+
 
         if len(args) >= 2:
             if args[1].isdigit():
                 if len(ctx.message.mentions) > 0:
                     member = ctx.message.mentions[0]
                 elif args[0].isdigit():
+                    if len(args[0]) != 18:
+                        await ctx.send('Uso correcto: `la!givemoney <user> <amount>`')
+                        return
                     try:
-                        print("a")
-                        print(int(args[0]))
+
                         member = ctx.guild.get_member(int(args[0]))
                     except:
                         try:
-                            print("b")
                             member = self.bot.get_user(int(args[0]))
                         except:
                             emoji_nuu = self.bot.get_emoji(762174833752408106)
@@ -373,7 +475,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                     amount = int(args[1])
 
                     if amount == 0:
-                        await ctx.send(f"Por favor da más de **0** :eggplant:")
+                        await ctx.send(f"Cantidad inválida de :eggplant:")
                     elif player_author['panchessco_money'] < amount:
                         await ctx.send(f"No tienes suficiente dinero. Ahora mismo tienes **{player_author['panchessco_money']}** :eggplant: ")
                     else:
@@ -412,6 +514,9 @@ class EconomyCog(commands.Cog, name="Economy"):
                     if len(ctx.message.mentions) > 0:
                         member = ctx.message.mentions[0]
                     elif args[0].isdigit():
+                        if len(args[0]) != 18:
+                            await ctx.send('Uso correcto: `la!addmoney <user> <amount>`')
+                            return
                         try:
                             member = self.bot.get_user(int(args[0]))
                         except:
@@ -436,7 +541,42 @@ class EconomyCog(commands.Cog, name="Economy"):
             return
 
 
+    @commands.command(aliases=['remove-money', 'remove-bal', 'removebal', 'rb'])
+    async def removemoney(self, ctx):
+        if ctx.message.author.guild_permissions.administrator:
 
+            args = ctx.message.content.split()[1:]
+
+            if len(args) == 2:
+                if args[1].isdigit():
+                    if len(ctx.message.mentions) > 0:
+                        member = ctx.message.mentions[0]
+                    elif args[0].isdigit():
+                        if len(args[0]) != 18:
+                            await ctx.send('Uso correcto: `la!removemoney <user> <amount>`')
+                            return
+                        try:
+                            member = self.bot.get_user(int(args[0]))
+                        except:
+                            emoji_nuu = self.bot.get_emoji(762174833752408106)
+                            await ctx.send(f'{emoji_nuu} usuario no encontrado')
+                            return
+                    if member.bot:
+                        await ctx.send("Este comando no funciona en bots")
+                        return
+
+                    player = pyMongoManager.get_profile(member.id)
+                    new_balance = player['panchessco_money'] - int(args[1])
+
+                    emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
+                    pyMongoManager.update_money(member.id, new_balance)
+                    await ctx.send(f"Dinero de {member.name}: **{new_balance}** :eggplant:")
+                else:
+                    await ctx.send('Cantidad no válida')
+            else:
+                await ctx.send('Uso correcto: `la!removemoney <user> <amount>`')
+        else:
+            return
 
 
     @commands.command()
@@ -606,7 +746,7 @@ class EconomyCog(commands.Cog, name="Economy"):
     
                 else:
                     phrase = ' '.join(args).replace("🍆", ":eggplant:")
-                    if phrase not in work_phrases:
+                    if phrase not in server['work_phrases']:
                         await ctx.send(f"No se ha encontrado la frase `{phrase}`")
                     else:
                         pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
@@ -618,140 +758,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             
             
             
-
-    @commands.command(aliases=['bj'])
-    async def blackjack(self, ctx):
-        args = ctx.message.content.split()[1:]
-
-        player_cards = []
-        bot_cards = []
-
-        
-
-        player_value = 0
-        bot_value = 0
-
-        endgame = False
-
-        player_wins = False
-        blackjack = False
-
-        emoji_server1 = self.bot.get_guild(728003338880286753)
-        emoji_server2 = self.bot.get_guild(855864156765945897)
-
-
-        game_cards = [11, 11, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6,
-        7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]*3
-
-        game_cards_string = {
-    
-            1: ['<:AsTreboles:855862941164109824>', '<:AsCorazones:855862941219946536>'],
-            2: ['<:2corazones:855862940980346893>', '<:2diamantes:855862941034348585>', '<:2picas:855862941168304198>', '<:2treboles:855862941265952788>'],
-            3: ['<:3picas:855862940796452936>', '<:3treboles:855862940904849409>', '<:3diamantes:855862941413146624>', '<:3corazones:855862941563617310>'],
-            4: ['<:4treboles:855862940871688253>', '<:4picas:855862941047455765>', '<:4diamantes:855862941152575546>', '<:4corazones:855862941228597289>'],
-            5: ['<:5treboles:855862940984279082>', '<:5picas:855862941186654249>', '<:5diamantes:855862941295181824>', '<:5corazones:855862941337124914>'],
-            6: ['<:6corazones:855862940912582667>', '<:6diamantes:855862941113647105>', '<:6treboles:855862941201989672>', '<:6picas:855862941311303731>'],
-            7: ['<:7treboles:855862940980740167>', '<:7picas:855862941201858580>', '<:7corazones:855862941202645042>', '<:7diamantes:855862941231218718>'],
-            8: ['<:8treboles:855862940899737621>', '<:8corazones:855862941268836383>', '<:8diamantes:855862941303832625>', '<:8picas:855862941424156722>'],
-            9: ['<:9picas:855862940792389633>', '<:9treboles:855862940993060884>', '<:9diamantes:855862941236330526>', '<:9corazones:855862941337124904>'],
-            10:['<:KDiamantes:855862940883746816>', '<:KTreboles:855862940943384627>', '<:JPicas:855862941035528232>', '<:JTreboles:855862941080616980>',
-            '<:JDiamantes:855862941114433556>', '<:JCorazones:855862941189931028>', '<:KCorazones:855862941261758534>', '<:QDiamantes:855862941390602281>',
-            '<:KPicas:855862941404758066>', '<:QCorazones:855862941454696488>', '<:QPicas:855864206392950825>', '<:QTreboles:855864206527430657>', 
-            '<:10treboles:855862941287317544>', '<:10diamantes:855862941366747156>', '<:10picas:855862941282467870>', '<:10corazones:855862941499785246>'],
-            11:['<:AsPicas:855862941240655892>', '<:AsDiamantes:855862941262151751>']
-        
-        
-        
-        }
-
-
-
-
-        if len(args) == 0:
-            await ctx.send("Debes poner tu apuesta")
-
-        else:
-            
-            if args[0].isdigit():
-
-                player = pyMongoManager.get_profile(ctx.author.id)
-
-                if player['panchessco_money'] >= (amount := int(args[0])):
-
-
-                    async def hit(gambler):
-
-                        card_value = random.choice(game_cards)
-                        card_emoji = random.choice([x for x in game_cards_string[card_value]])
-                        game_cards.remove(card_value)
-                        
-                        if gambler == "player":
-
-                            player_cards.append(card_emoji)
-                            player_value += card_value
-
-                        else:
-                            bot_cards.append(card_emoji)
-                            bot_value += card_value
-
-
-                    async def double(gambler):
-
-                        card_value = random.choice(game_cards)
-                        card_emoji = random.choice([x for x in game_cards_string[card_value]])
-                        game_cards.remove(card_value)
-
-                        if gambler == "player":
-
-                            player_cards.append(card_emoji)
-                            player_value += card_value
-                            amount*=2
-
-                        else:
-                            bot_cards.append(card_emoji)
-                            bot_value += card_value
-
-                        endgame = True
-
-
-                    async def stand():
-
-                        if bot_value < 17:
-                            await hit("bot")
-                        endgame = True
-
-
-                    async def check():
-
-                        if player_value > 21 and bot_value <= 21:
-                            endgame = True 
-
-                        elif player_value == 21 and bot_value != 21:
-                            blackjack = True 
-                            endgame = True
-                            player_wins = True
-
-                        elif player_value < 21 and bot_value > 21:
-                            engame = True
-                            player_wins = True
-
-                        else:
-                            pass
-
-
-
-
-                    embed = discord.Embed()
-                    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-                    embed.add_field(name=f"{ctx.author.name}'s cards:\n", value=f"{' '.join(player_cards)}\n Value: {player_value}", inline=True)
-                    embed.add_field(name=f"Lalatina's cards:\n", value=f"{' '.join(bot_cards)}\n Value: {bot_value}", inline=True)
-                    btn_red = Button(label='Red Button!', style=ButtonStyle.Red, custom_id='red_btn')
-                    await hit("player")
-                    await hit("player")
-                    await hit("bot")
-                    await hit("bot")
-
-                    await ctx.send(embed=embed)
 
 
 
