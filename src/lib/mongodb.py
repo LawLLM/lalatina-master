@@ -23,7 +23,7 @@ def inspeccionar(objeto):
 class PyMongoManager:
     def __init__(self):
         self.client = pymongo.MongoClient(config.mongoDb_connection)
-        self.db_discord = self.client['db_test']
+        self.db_discord = self.client['db_panchessco']
 
 #        self.collection_puzzles = self.db_discord['puzzles']
 #
