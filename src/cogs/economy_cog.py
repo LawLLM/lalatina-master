@@ -5,10 +5,11 @@ from discord.ext import commands
 import copy
 
 import discord.utils as dutils
-
+import requests
 import aiohttp
 import math
-
+import time
+from time import sleep
 import pymongo
 from src.lib.mongodb import PyMongoManager
 
@@ -100,8 +101,8 @@ class EconomyCog(commands.Cog, name="Economy"):
 
                 else:
 
-                    if user['panchessco_money'] >=  obj['value']:
-                        user['panchessco_money'] -= obj['value']
+                    if user['cash'] >=  obj['value']:
+                        user['cash'] -= obj['value']
 
                         if obj['stock'] is not None:  
                             if obj['stock'] == 1:
@@ -193,7 +194,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-    @commands.command(aliases=['inv', 'wallet'])
+    @commands.command(aliases=['inv', 'wallet', 'bal', 'balance'])
     async def inventory(self, ctx):
         args = ctx.message.content.split()[1:]
         
@@ -227,7 +228,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         embed.title = f"Inventario de {member.name}"
 
         text = ""
-        text += f"Dinero: {user['panchessco_money']} :eggplant:\n\n"
+        text += f"Cartera: {user['cash']} :eggplant:\nBanco: {user['bank']} :eggplant:\n\n"
 
         for name, quantity in user['inventory'].items():
             text += f"{name} (x{quantity})\n"
@@ -476,11 +477,11 @@ class EconomyCog(commands.Cog, name="Economy"):
 
                     if amount == 0:
                         await ctx.send(f"Cantidad inválida de :eggplant:")
-                    elif player_author['panchessco_money'] < amount:
-                        await ctx.send(f"No tienes suficiente dinero. Ahora mismo tienes **{player_author['panchessco_money']}** :eggplant: ")
+                    elif player_author['cash'] < amount:
+                        await ctx.send(f"No tienes suficiente dinero. Ahora mismo tienes **{player_author['cash']}** :eggplant: ")
                     else:
-                        new_balance_author = player_author['panchessco_money'] - amount
-                        new_balance_receiver = player_receiver['panchessco_money'] + amount
+                        new_balance_author = player_author['cash'] - amount
+                        new_balance_receiver = player_receiver['cash'] + amount
 
 
                         pyMongoManager.update_money(ctx.author.id, new_balance_author)
@@ -528,7 +529,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                         return
 
                     player = pyMongoManager.get_profile(member.id)
-                    new_balance = player['panchessco_money'] + int(args[1])
+                    new_balance = player['cash'] + int(args[1])
 
                     emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
                     pyMongoManager.update_money(member.id, new_balance)
@@ -566,7 +567,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                         return
 
                     player = pyMongoManager.get_profile(member.id)
-                    new_balance = player['panchessco_money'] - int(args[1])
+                    new_balance = player['cash'] - int(args[1])
 
                     emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
                     pyMongoManager.update_money(member.id, new_balance)
@@ -594,9 +595,9 @@ class EconomyCog(commands.Cog, name="Economy"):
                 page = 1
 
 
-        result = pyMongoManager.collection_profiles.find({'panchessco_money': {'$ne': 0}})
+        result = pyMongoManager.collection_profiles.find({})
         list_result = list(result)
-        list_result.sort(key=lambda result: result['panchessco_money'], reverse=True)
+        list_result.sort(key=lambda result: result['cash']+result['bank'], reverse=True)
         
         num_users = len(list_result)
 
@@ -617,7 +618,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         index = 1
         text = ""
         for item in list_result[nmb_a:nmb_b]:
-            text += f"{index+nmb_a}. <@{item['user_id']}> - {item['panchessco_money']} :eggplant:\n"
+            text += f"{index+nmb_a}. <@{item['user_id']}> - {item['cash']+item['bank']} :eggplant:\n"
             index += 1
         
         embed.description = text
@@ -633,9 +634,9 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         amount = random.randint(100, 700)
 
-        user['panchessco_money'] += amount
+        user['cash'] += amount
 
-        pyMongoManager.update_money(ctx.author.id, user['panchessco_money'])
+        pyMongoManager.update_money(ctx.author.id, user['cash'])
 
         server = pyMongoManager.get_guild(512830421805826048)
 
@@ -757,9 +758,66 @@ class EconomyCog(commands.Cog, name="Economy"):
             await ctx.send(emojiNo)  
             
             
-            
+    @commands.command()
+    async def withdraw(self, ctx):
+        args = ctx.message.content.split()[1:]
+
+        if len(args) == 0:
+            await ctx.send("Uso correcto: la!withdraw <cantidad>")
+            return
+
+        amount = 0
+
+        if args[0].isdigit():
+            amount = int(args[0])
+        else:
+            if args[0].lower() == "all":
+                amount = "all"
+            else:
+                await ctx.send("Por favor, ingrese una cantidad válida")
+                return
+
+        usr = pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
+        if amount == "all":
+            amount = usr['bank']
+        if usr['bank'] < amount:
+            await ctx.send("No tienes suficientes :eggplant:")
+            return
+        usr['cash'] += amount
+        usr['bank'] -= amount
+        pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
+        await ctx.send(f"Has sacado {amount} :eggplant: del banco")
 
 
+    @commands.command()
+    async def deposit(self, ctx):
+        args = ctx.message.content.split()[1:]
+
+        if len(args) == 0:
+            await ctx.send("Uso correcto: la!deposit <cantidad>")
+            return
+
+        amount = 0
+        if args[0].isdigit():
+            amount = int(args[0])
+        else:
+            if args[0].lower() == "all":
+                amount = "all"
+            else:
+                await ctx.send("Por favor, ingrese una cantidad válida")
+                return
+
+
+        usr = pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
+        if amount == "all":
+            amount = usr['cash']
+        if usr['cash'] < amount:
+            await ctx.send("No tienes suficientes :eggplant:")
+            return
+        usr['cash'] -= amount
+        usr['bank'] += amount
+        pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
+        await ctx.send(f"Has depositado {amount} :eggplant: en el banco")
 
 
 
