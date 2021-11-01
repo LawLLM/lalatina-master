@@ -49,11 +49,12 @@ class PyMongoManager:
             "birthday_date_month": None,
             "birthday_number_attemps": 0,
             "thumbnail": "discord",
-            "panchessco_money": 0,                      # Economy - Customize
             'legend_start_time': None,
             'legend_times': 0,
             'inventory': {},
             'embed_color': None,
+            'cash': 0,
+            'bank': 0
         }
 
         self.guild_base = {
@@ -233,12 +234,12 @@ class PyMongoManager:
         myQuery = {'user_id': user_id}
 
         if self.collection_profiles.count_documents(myQuery, limit=1):
-            newValues = {'$set': {'panchessco_money': new_balance}}
+            newValues = {'$set': {'cash': new_balance}}
             self.collection_profiles.update_one(myQuery, newValues)
         else:
             newData = copy.copy(self.profile_base)
             newData['user_id'] = user_id
-            newData['panchessco_money'] = new_balance
+            newData['cash'] = new_balance
 
             self.collection_profiles.insert_one(newData)
 
