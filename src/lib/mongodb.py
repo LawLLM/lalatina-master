@@ -41,6 +41,7 @@ class PyMongoManager:
         self.collection_auto_reply = self.db_discord['auto_reply']
 
         self.shop = self.db_discord['shop']
+        self.panchessco = self.collection_guilds.find_one({'guild_id':512830421805826048})
 
         self.profile_base = {
             "user_id": None,
@@ -54,7 +55,7 @@ class PyMongoManager:
             'inventory': {},
             'embed_color': None,
             'cash': 0,
-            'bank': 0
+            'bank': self.panchessco['start_balance']
         }
 
         self.guild_base = {
