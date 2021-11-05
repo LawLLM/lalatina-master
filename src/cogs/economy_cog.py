@@ -220,11 +220,11 @@ class EconomyCog(commands.Cog, name="Economy"):
             await ctx.send("Este comando no funciona en bots")
             return
 
-        user = pyMongoManager.collection_profiles.find_one({"user_id":member.id})
+        user = pyMongoManager.get_profile(member.id)
 
 
         embed = discord.Embed()
-        embed.colour = self.bot.get_embed_color(ctx.author.id)
+        embed.colour = self.bot.get_embed_color(member.id)
         embed.title = f"Inventario de {member.name}"
 
         text = ""
@@ -245,7 +245,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
     
 
-    @commands.command()
+    @commands.command(aliases=['add-item'])
     async def additem(self, ctx):
 
         obj = pyMongoManager.object_base
@@ -504,7 +504,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-    @commands.command()
+    @commands.command(aliases=['add-money'])
     async def addmoney(self, ctx):
         if ctx.message.author.guild_permissions.administrator:
 
@@ -611,7 +611,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         nmb_b = nmb_a + ITEMS_PER_PAGE
 
         embed = discord.Embed()
-        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.colour = self.bot.get_embed_color(ctx.author.id)
         embed.set_footer(text=f'Página {page} de {num_pages}')
 
 
@@ -646,7 +646,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         
         embed = discord.Embed()
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
-        embed.colour = discord.Color.from_rgb(230, 126, 34)
+        embed.colour = self.bot.get_embed_color(ctx.author.id)
         embed.description = random.choice(phrases).replace("{amount}", str(amount))
         await ctx.send(embed=embed)
 
@@ -693,7 +693,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
             embed = discord.Embed(title='Frases del Comando Work')
-            embed.colour = discord.Color.from_rgb(230, 126, 34)
+            embed.colour = self.bot.get_embed_color(ctx.author.id)
             text = ""
 
             index = page*10-9
@@ -758,7 +758,7 @@ class EconomyCog(commands.Cog, name="Economy"):
             await ctx.send(emojiNo)  
             
             
-    @commands.command()
+    @commands.command(aliases=['with'])
     async def withdraw(self, ctx):
         args = ctx.message.content.split()[1:]
 
@@ -789,7 +789,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         await ctx.send(f"Has sacado {amount} :eggplant: del banco")
 
 
-    @commands.command()
+    @commands.command(aliases=['dep'])
     async def deposit(self, ctx):
         args = ctx.message.content.split()[1:]
 
@@ -818,6 +818,84 @@ class EconomyCog(commands.Cog, name="Economy"):
         usr['bank'] += amount
         pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
         await ctx.send(f"Has depositado {amount} :eggplant: en el banco")
+
+
+
+
+
+    @commands.command(aliases=['item-info'])
+    async def item_info(self, ctx):
+        args = ctx.message.content.split()[1:]
+
+        if len(args) == 0:
+            await ctx.send("Uso correcto: `la!item-info <nombre>`")
+            return
+        
+        else:
+            cons = ''.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
+            obj = pyMongoManager.collection_shop.find_one({'key': cons})
+
+            if obj is not None:
+                embed = discord.Embed(title=obj['name'])
+                embed.colour = self.bot.get_embed_color(ctx.author.id)
+                embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+                if obj['image'] is not None:
+                    embed.set_thumbnail(url=obj['image'])
+                if obj['stock'] is not None:
+                    stock = obj['stock']
+                else:
+                    stock = "infinitos"
+                if obj['message'] is not None:
+                    message = obj['message']
+                else:
+                    message = "ninguno"
+                if obj['roleAdded'] is not None:
+                    roleAd = obj['roleAdded']
+                else:
+                    roleAd = "ninguno"
+                
+                if obj['roleRemoved'] is not None:
+                    roleRe = obj['roleRemoved']
+                else:
+                    roleRe = "ninguno"
+                if obj['roleRequired'] is not None:
+                    roleReq = obj['roleRequired']
+                else:
+                    roleReq = "ninguno"
+                text = f"**Valor:** {obj['value']} :eggplant:\n**Descripción:** `{obj['description']}`\n**Mensaje:** {message}\n**Disponibles:** `{stock}`\n**Rol que otorga:** {roleAd}\n**Rol que quita:** {roleRe}\n**Rol necesario para comprarlo:** {roleReq}"
+                embed.description = text
+                await ctx.send(embed=embed)
+
+
+            else:
+                await ctx.send(f"No se ha encontrado el objeto `{' '.join(args)}`")
+
+
+    @commands.command(aliases=['remove-item', 'delete-item', 'remove-object', 'delete-object'])
+    async def delete_item(self, ctx):
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            return
+        args = ctx.message.content.split()[1:]
+        if len(args) == 0:
+            await ctx.send("Uso correcto: `la!delete-item <nombre>`")
+            return
+        
+        cons = ''.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
+
+        obj = pyMongoManager.collection_shop.find_one({'key': cons})
+        if obj is None:
+            await ctx.send(f"No se ha encontrado el objeto `{' '.join(args)}`")
+            return
+        else:
+            pyMongoManager.collection_shop.delete_one({'key': cons})
+            await ctx.send("Objeto borrado")
+
+
+
+
+
+
+
 
 
 
