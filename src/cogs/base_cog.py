@@ -67,6 +67,10 @@ class BaseCog(commands.Cog, name="Base"):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         guild_id = member.guild.id
+        name = unidecode(member.name)
+        await member.edit(nick=name)
+
+
 
         if guild_id in self.bot.welcome_channels_id.keys():
             channel = self.bot.get_channel(self.bot.welcome_channels_id[guild_id])
