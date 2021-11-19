@@ -17,8 +17,8 @@ import src.lib.mongodb as mongodb
 pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
-TPREFIX = config.TPREFIX
-
+en_es = config.en_es
+es_en = config.es_en
 
 session_dbg = aiohttp.ClientSession()
 session_dbl = aiohttp.ClientSession()
@@ -43,13 +43,18 @@ class BaseCog(commands.Cog, name="Base"):
         
         if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
-        elif message.content.startswith(TPREFIX):
-            args = message.content.replace(TPREFIX, "").split(" ")[0:]
+        elif message.content.startswith(en_es) or message.content.startswith(es_en):
+            if message.content.startswith(en_es):
+                args = message.content.replace(en_es, "").split(" ")[0:]
+                lang = 'ES'
+            else:
+                args = message.content.replace(es_en, "").split(" ")[0:]
+                lang = 'EN'
 
             data = {
                 'auth_key': config.deepl_pass,
                 'text': ' '.join(args),
-                'target_lang': 'ES'
+                'target_lang': lang
             }
 
             async with aiohttp.ClientSession() as session:
