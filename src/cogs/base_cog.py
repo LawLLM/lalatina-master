@@ -46,16 +46,13 @@ class BaseCog(commands.Cog, name="Base"):
         elif message.content.startswith(en_es) or message.content.startswith(es_en):
             if message.content.startswith(en_es):
                 args = message.content.replace(en_es, "").split(" ")[0:]
-                lang = 'ES'
+                data = {'auth_key': config.deepl_pass, 'text': ' '.join(args), 'target_lang': 'ES'}
+
+
             else:
                 args = message.content.replace(es_en, "").split(" ")[0:]
-                lang = 'EN'
+                data = {'auth_key': config.deepl_pass, 'text': ' '.join(args), 'target_lang': 'EN', 'source_lang': 'ES'}
 
-            data = {
-                'auth_key': config.deepl_pass,
-                'text': ' '.join(args),
-                'target_lang': lang
-            }
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(f'https://api-free.deepl.com/v2/translate', data=data) as resp:
