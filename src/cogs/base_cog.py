@@ -67,7 +67,7 @@ class BaseCog(commands.Cog, name="Base"):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         guild_id = member.guild.id
-        name = unidecode(member.name)
+        name = unidecode.unidecode(member.name)
         await member.edit(nick=name)
 
 
