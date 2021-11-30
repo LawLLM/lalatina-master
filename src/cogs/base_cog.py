@@ -6,6 +6,7 @@ import asyncio
 import aiohttp
 
 import config
+import unidecode
 
 import src.bean.CONSTANTS as CONSTANTS
 
