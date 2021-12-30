@@ -151,5 +151,5 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 
 def setup(bot):
 	bot.add_cog(BirthdayCog(bot))
-	print("Birthday Cog CARGADO")
+	print("Calendar Cog CARGADO")
 
