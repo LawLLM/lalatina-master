@@ -33,7 +33,7 @@ initial_extensions = (
     'src.cogs.useful_cog',
     'src.cogs.help_cog',
     'src.cogs.adv_economy_cog',
-
+    'src.cogs.games_cog',
 )
 
 
