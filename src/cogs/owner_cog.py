@@ -90,7 +90,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 	@commands.command(aliases=['staff-list', 'dev-list'])
 	async def staff_list(self, ctx):
 		staff_list = self.bot.get_panchessco_staff_id_list()
-		if ctx.author.id not in staff_list:
+		if ctx.author.id not in staff_list or ctx.author.id == 919646375577288725:
 			return
 		panchessco = pyMongoManager.collection_guilds.find_one({'guild_id':512830421805826048})
 
@@ -127,7 +127,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 	@commands.command()
 	async def unbelievaboat(self, ctx): 
 		staff_list = self.bot.get_panchessco_staff_id_list()
-		if ctx.author.id not in staff_list:
+		if ctx.author.id not in staff_list or ctx.author.id == 919646375577288725:
 			return
 		await ctx.send("¿Estás seguro? (Este proceso es irreversible y modificará el dinero de todos los usuarios) [Y/n]")
 		try:
