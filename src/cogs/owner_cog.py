@@ -118,12 +118,10 @@ class OwnerCog(commands.Cog, name="Owner"):
 
 		embed.description = text
 		await ctx.send(embed=embed)
+		
+		
+		
 	
-
-# Pasa el dinero de la db de UnbelievaBoat a la de lalatina
-# Tarda unos 12 minutos en acabar xd
-
-
 	@commands.command()
 	async def unbelievaboat(self, ctx): 
 		staff_list = self.bot.get_panchessco_staff_id_list()
@@ -145,11 +143,14 @@ class OwnerCog(commands.Cog, name="Owner"):
 				if resp.status == 200:
 					data_json = await resp.json()
 					pages = data_json['total_pages']
-		tiempo_aprox = int(round((pages*25)/517.579424, 0)*2)
+					page_1_data = data_json['balances']
+					for y in page_1_data:
+						pyMongoManager.update_money(y['user_id'], y['total'])
+		tiempo_aprox = int(round((pages*25)/17.7204968944, 0))
 		await ctx.send(f"`Tiempo de espera aproximado: {tiempo_aprox} minutos`")
 		for x in range(pages):
 			async with aiohttp.ClientSession() as session:
-				async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+1}') as resp:
+				async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+2}') as resp:
 					if resp.status == 200:
 						data_json = await resp.json()
 						balances = data_json['balances']
