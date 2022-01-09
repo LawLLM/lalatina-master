@@ -55,7 +55,7 @@ class PyMongoManager:
             'inventory': {},
             'embed_color': None,
             'cash': 0,
-            'bank': self.panchessco['start_balance']
+            'bank': self.collection_guilds.find_one({'guild_id':512830421805826048})['start_balance']
         }
 
         self.guild_base = {
@@ -94,6 +94,9 @@ class PyMongoManager:
 
 
     # NUEVAS COSAS
+    def get_dev_list(self):
+        panchessco = self.collection_guilds.find_one({'guild_id':512830421805826048})
+        return panchessco['developers']
 
     def get_all_starboard(self):
         return list(self.collection_star_board.find())
