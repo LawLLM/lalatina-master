@@ -144,20 +144,19 @@ class OwnerCog(commands.Cog, name="Owner"):
 			async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page=1') as resp:
 				if resp.status == 200:
 					data_json = await resp.json()
-					pages = data_json['total_pages'] + 1
+					pages = data_json['total_pages']
 		tiempo_aprox = int(round((pages*25)/517.579424, 0)*2)
 		await ctx.send(f"`Tiempo de espera aproximado: {tiempo_aprox} minutos`")
-		index=1    
 		for x in range(pages):
 			async with aiohttp.ClientSession() as session:
-				async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={index}') as resp:
+				async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+1}') as resp:
 					if resp.status == 200:
 						data_json = await resp.json()
 						balances = data_json['balances']
 						for y in balances:
 							pyMongoManager.update_money(y['user_id'], y['total'])
 					else:
-						await ctx.send(f"`Error: index {index}`\nhttps://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={index}")
+						await ctx.send(f"`Error: index {x+1}`\nhttps://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+1}")
 		end=time.time()
 		spend_time = end-start
 		if spend_time/60 >= 1:
