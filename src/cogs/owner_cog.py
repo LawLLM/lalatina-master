@@ -147,7 +147,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 					for y in page_1_data:
 						pyMongoManager.update_money(y['user_id'], y['total'])
 		tiempo_aprox = int(round((pages*25)/17.7204968944, 0))
-		await ctx.send(f"`Tiempo de espera aproximado: {tiempo_aprox} minutos`")
+		await ctx.send(f"`Tiempo de espera aproximado: {tiempo_aprox} segundos`")
 		for x in range(pages):
 			async with aiohttp.ClientSession() as session:
 				async with session.get(f'https://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+2}') as resp:
