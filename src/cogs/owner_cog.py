@@ -156,6 +156,8 @@ class OwnerCog(commands.Cog, name="Owner"):
 						balances = data_json['balances']
 						for y in balances:
 							pyMongoManager.update_money(y['user_id'], y['total'])
+					else:
+						await ctx.send(f"`Error: index {index}`\nhttps://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={index}")
 		end=time.time()
 		spend_time = end-start
 		if spend_time/60 >= 1:
