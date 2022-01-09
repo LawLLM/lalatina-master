@@ -79,10 +79,10 @@ class BaseCog(commands.Cog, name="Base"):
             emoji_fantasmita = self.bot.get_emoji(CONSTANTS.ID_EMOJI_FANTASMITA)
 
             await channel.send(f'Bienvenido al servidor **{member.name}**. Esperamos que la pases bien {emoji_fantasmita}')
-            guild_panchessco = self.bot.get_guild(config.panchessco_id)
-            member_lolced = guild_panchessco.get_member(335197648342745088)
-
-            await member_lolced.send(f'**{member.name}** entro al server weon!!!')
+            #guild_panchessco = self.bot.get_guild(config.panchessco_id)
+            #member_lolced = guild_panchessco.get_member(335197648342745088)
+            # F lolced, esperemos que vuelva
+            #await member_lolced.send(f'**{member.name}** entro al server weon!!!')
 
 
     @commands.Cog.listener()
