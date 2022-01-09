@@ -6,7 +6,7 @@ import asyncio
 
 
 pyMongoManager = PyMongoManager()
-developers_id = pyMongoManager.panchessco['developers']
+
 
 
 class AdvEconomyCog(commands.Cog, name="AdvEconomyCog"):
@@ -163,7 +163,7 @@ class AdvEconomyCog(commands.Cog, name="AdvEconomyCog"):
 
     @commands.command(aliases=['reset-economy'])
     async def reset_economy(self, ctx):
-        if ctx.author.id not in developers_id:
+        if ctx.author.id not in pyMongoManager.get_dev_list():
             return
         
         await ctx.send("¿Seguro que quieres eliminar el dinero de todos los usuarios? [Y/n]")
