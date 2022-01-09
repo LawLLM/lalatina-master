@@ -161,6 +161,9 @@ class OwnerCog(commands.Cog, name="Owner"):
 		if spend_time/60 >= 1:
 			s = spend_time%60
 			m = spend_time/60
+		else:
+			s= spend_time
+			m=0
 		await ctx.send(f"Tarea completada, tiempo empleado aproximado: `{int(round(m, 0))}m y {int(round(s, 0))}`s")
 
 
