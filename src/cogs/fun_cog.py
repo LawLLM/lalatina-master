@@ -109,6 +109,10 @@ class EmojiCog(commands.Cog, name="Emoji"):
                     # ver si agregar el mensaje
                     original_message = await channel_message.fetch_message(payload.message_id)
 
+                    content_lower = unidecode.unidecode(original_message.content.lower().replace(".", ""))
+                    if content_lower in self.auto_reaction_dict.keys():
+                        return
+
                     if payload.emoji.id and self.bot.get_emoji(payload.emoji.id) and not original_message.author.bot:
                         emoji_count = 0
 
