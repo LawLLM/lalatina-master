@@ -627,7 +627,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-	@commands.cooldown(1, pyMongoManager.get_time_remaining(), commands.BucketType.user)
+	@commands.cooldown(1, pyMongoManager.get_time_remaining('work'), commands.BucketType.user)
 	@commands.command()
 	async def work(self, ctx):
 		user = pyMongoManager.get_profile(ctx.author.id)
@@ -892,30 +892,35 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-#    @commands.command(aliases=['edit-item', 'edit-item', 'edit-object', 'edit-object'])
-#    async def edit_item(self, ctx): # la!edit-item <opcion> <valor> <nombre>
-#        if not ctx.author.permissions_in(ctx.channel).administrator:
-#            return
-#        args = ctx.message.content.split()[1:]
-#        if len(args) < 3:
-#            await ctx.send("Uso correcto: `la!edit-item <nombre>`")
-#            return
-#        
-#
-#        if args[0].lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "") in ("nombre", "descripcion", "valor", "imagen", "mensaje", "rolqueotorga", "rolquequita", "rolnecesario", "stock")
+	@commands.command(aliases=['edit-item', 'edit-object'])
+	async def edit_item(self, ctx): # la!edit-item <opcion> <valor> <nombre>
+		if not ctx.author.permissions_in(ctx.channel).administrator:
+			return
 
+		args = ctx.message.content.split()[1:]
+		
+		if args[0].lower() not in ("name", "value", "description", "image", "message", "stock", "roleadded", "rolerequired", "roleremoved"):
+			await ctx.send(f"Parámetros editables: `name` `value` `description` `image` `message` `stock` `roleAdded`, `roleRemoved`, `roleRequired` ")
+			return
 
-
-
-
-#        cons = ''.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
-#        obj = pyMongoManager.collection_shop.find_one({'key': cons})
-#        if obj is None:
-#            await ctx.send(f"No se ha encontrado el objeto `{' '.join(args)}`")
-#            return
+		if len(args) < 3:
+			await ctx.send("Uso correcto: `la!edit-item <opcion> <valor> <nombre>`")
+			return
 		
 
+		cons = ''.join(args[2:]).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
+
+		if pyMongoManager.collection_shop.find_one({'key': cons}) is None:
+			await ctx.send(f"No se ha encontrado el objeto `{' '.join(args[2:])}`")
+			return
+
+		if args[1].isdigit() and args[0].lower() in ("stock", "value", "roleadded", "roleremoved", "rolerequired"):
+			args[1] = int(args[1])
 		
+
+
+		pyMongoManager.collection_shop.find_one_and_update({'key': cons}, {'$set': {args[0]:args[1]}})
+		await ctx.send("Cambios realizados")
 
 
 
