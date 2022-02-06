@@ -10,7 +10,7 @@ import src.controller.utils as utils
 
 from src.lib.mongodb import PyMongoManager
 
-pyMongoManager = PyMongoManager()
+
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class PanchesscoBot(commands.AutoShardedBot):
         super().__init__(command_prefix=config.prefix , help_command=None, max_messages=None, intents=intents)
 
         self.client_id = config.client_id
-
+        self.pyMongoManager = PyMongoManager()
         self.prefixes = {}
         self.autogifs = {}
         self.embed_colors = {} # User Id -> hex_color
@@ -60,7 +60,7 @@ class PanchesscoBot(commands.AutoShardedBot):
                 traceback.print_exc()
 
         #guilds_list = pyMongoManager.get_discord_guilds()
-        profiles_list = pyMongoManager.get_all_profiles()
+        profiles_list = self.pyMongoManager.get_all_profiles()
 
         for profile in profiles_list:
             if profile['embed_color']:
