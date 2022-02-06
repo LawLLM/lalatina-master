@@ -1,4 +1,5 @@
 import copy
+from tkinter import W
 import pymongo
 import dns
 from bson.objectid import ObjectId
@@ -25,15 +26,8 @@ class PyMongoManager:
         self.client = pymongo.MongoClient(config.mongoDb_connection)
         self.db_discord = self.client['db_panchessco']
 
-#        self.collection_puzzles = self.db_discord['puzzles']
-#
-#        self.collection_puzzles_dataset = self.db_discord['puzzles_dataset']
-#
-#        self.collection_games_explorer = self.db_discord['games_explorer']
         
         self.collection_profiles = self.db_discord['profiles']
-#        self.collection_chess_games = self.db_discord['chess_games']
-
         self.collection_guilds = self.db_discord['guild']
         self.collection_shop = self.db_discord['shop']
         self.collection_star_board = self.db_discord['starboard']
@@ -45,7 +39,7 @@ class PyMongoManager:
 
         self.profile_base = {
             "user_id": None,
-            "description": None,            # Chess Profile
+            "description": None,            
             "birthday_date_day": None,
             "birthday_date_month": None,
             "birthday_number_attemps": 0,
@@ -61,6 +55,38 @@ class PyMongoManager:
         self.guild_base = {
             "guild_id": None,
             "work_time": 300,
+            "work_phrases": [],
+            "self_assignable_roles": [],
+            "tprefix": "<<",
+            "start_balance": 0,
+            "cooldowns": {
+                'work': 300,
+                'slut': 300,
+                'crime': 300,
+                'rob': 300
+            },
+            "bet_limits": {
+                'blackjack': {
+                    'min': 100,
+                    'max': None
+                },
+                'roulette': {
+                    'min': 100,
+                    'max': None
+                },
+                'cock-fight': {
+                    'min': 100,
+                    'max': None
+                },
+                'russian-roulette': {
+                    'min': 100,
+                    'max': None
+                },
+                'slot-machine': {
+                    'min': 100,
+                    'max': None
+                }
+            },
         }
 
         self.object_base = {
@@ -262,11 +288,11 @@ class PyMongoManager:
 
             self.collection_chess_players.insert_one(newData)
 
-    def get_time_remaining(self):
+    def get_time_remaining(self, game):
         myQuery = {'guild_id': config.panchessco_id}
         result = self.collection_guilds.find_one(myQuery)
-        return int(result['work_time'])
-    
+        return int(result['cooldowns'][game])
+
     def add_work_phrase(self, phrase):
         self.collection_guilds.update({'guild_id': config.panchessco_id}, {'$push': {'work_phrases': phrase}})
         
