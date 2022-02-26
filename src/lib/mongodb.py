@@ -1,5 +1,5 @@
 import copy
-from tkinter import W
+# from tkinter import W
 import pymongo
 import dns
 from bson.objectid import ObjectId
