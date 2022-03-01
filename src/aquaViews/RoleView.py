@@ -5,29 +5,33 @@ import config
 import src.controller.utils as utils
 
 
-class PersistentView(discord.ui.View):
+class TestSelect(discord.ui.Select):
     def __init__(self):
-        super().__init__(timeout=None)
+        
+        options = []
 
-    @discord.ui.button(
-        label="Green",
-        style=discord.ButtonStyle.green,
-        custom_id="persistent_view:green",
-    )
-    async def green(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("This is green.", ephemeral=True)
+        for i in range(40):
+            options.append(discord.SelectOption(label=str(i)))
+        
+        super().__init__(
+            placeholder="Select Role",
+            options=options,
+            min_values=1,
+            max_values=1,
+            custom_id=f"ADFSFSFADSADFSFADSDAFSAFD",
+        )
+    
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(content=self.values[0], ephemeral=True)
 
-    @discord.ui.button(
-        label="Red", style=discord.ButtonStyle.red, custom_id="persistent_view:red"
-    )
-    async def red(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("This is red.", ephemeral=True)
 
-    @discord.ui.button(
-        label="Grey", style=discord.ButtonStyle.grey, custom_id="persistent_view:grey"
-    )
-    async def grey(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("This is grey.", ephemeral=True)
+class TestView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+
+        self.test_select = TestSelect()
+        self.add_item(self.test_select)
+
 
 
 class RoleSelect(discord.ui.Select):

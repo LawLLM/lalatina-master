@@ -33,9 +33,12 @@ class BaseCog(commands.Cog, name="Base"):
         await self.bot.change_presence(status=discord.Status.online, activity=game)
 
         if not self.persistent_views_added:
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (0, 36)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (36, 72)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (72, 120)))
+            self.bot.add_view(AutoAsignableRoleView(self.bot, (0, 24)))
+            self.bot.add_view(AutoAsignableRoleView(self.bot, (24, 48)))
+            self.bot.add_view(AutoAsignableRoleView(self.bot, (48, 72)))
+            self.bot.add_view(AutoAsignableRoleView(self.bot, (72, 96)))
+            self.bot.add_view(AutoAsignableRoleView(self.bot, (96, 120)))
+
             self.persistent_views_added = True
 
     @commands.Cog.listener()

@@ -3,7 +3,7 @@ from discord.commands import Option, SlashCommandGroup, slash_command
 from discord.ext import commands
 import discord.utils as dutils
 
-from src.aquaViews.RoleView import AutoAsignableRoleView, PersistentView
+from src.aquaViews.RoleView import AutoAsignableRoleView, TestView
 import src.controller.utils as utils
 import src.lib.mongodb as mongodb
 
@@ -31,16 +31,24 @@ class RoleCog(commands.Cog, name="Role"):
             return
 
         await ctx.send(
-            "https://cdn.discordapp.com/attachments/828140277579513897/948027099254489118/unknown.png",
-            view=AutoAsignableRoleView(self.bot, (0, 36)),
+            "https://cdn.discordapp.com/attachments/828140277579513897/948280621602598983/unknown.png",
+            view=AutoAsignableRoleView(self.bot, (0, 24)),
         )
         await ctx.send(
-            "https://cdn.discordapp.com/attachments/828140277579513897/948027137888247819/unknown.png",
-            view=AutoAsignableRoleView(self.bot, (36, 72)),
+            "https://cdn.discordapp.com/attachments/828140277579513897/948280655475773450/unknown.png",
+            view=AutoAsignableRoleView(self.bot, (24, 48)),
         )
         await ctx.send(
-            "https://cdn.discordapp.com/attachments/828140277579513897/948027185623597086/unknown.png",
-            view=AutoAsignableRoleView(self.bot, (72, 120)),
+            "https://cdn.discordapp.com/attachments/828140277579513897/948280698643574794/unknown.png",
+            view=AutoAsignableRoleView(self.bot, (48, 72)),
+        )
+        await ctx.send(
+            "https://cdn.discordapp.com/attachments/828140277579513897/948280732864905256/unknown.png",
+            view=AutoAsignableRoleView(self.bot, (72, 96)),
+        )
+        await ctx.send(
+            "https://cdn.discordapp.com/attachments/828140277579513897/948281030249414656/unknown.png",
+            view=AutoAsignableRoleView(self.bot, (96, 120)),
         )
 
     @commands.command()
