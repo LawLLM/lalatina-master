@@ -37,7 +37,7 @@ initial_extensions = (
 class PanchesscoBot(commands.AutoShardedBot):
     def __init__(self):
         super().__init__(
-            command_prefix=commands.when_mentioned_or(config.prefix),
+            command_prefix=config.prefix,
             help_command=None,
             max_messages=None,
             intents=intents,
