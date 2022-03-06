@@ -1,3 +1,4 @@
+
 URL_TEAM_LICHESS = "https://lichess.org/team/panchessco"
 URL_TEAM_CHESSCOM = "https://www.chess.com/club/team-konosuba"
 
@@ -15,7 +16,7 @@ MAX_DAYS_BY_MONTH = {
     9: 30,
     10: 31,
     11: 30,
-    12: 31,
+    12: 31
 }
 
 MONTH_STRING = {
@@ -30,5 +31,5 @@ MONTH_STRING = {
     9: "septiembre",
     10: "octubre",
     11: "noviembre",
-    12: "diciembre",
+    12: "diciembre"
 }

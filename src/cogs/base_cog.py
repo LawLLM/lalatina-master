@@ -1,14 +1,21 @@
-import asyncio
 import traceback
 
-import aiohttp
 import discord
 from discord.ext import commands
-import unidecode
+import asyncio
+import aiohttp
 
 import config
-from src.aquaViews.RoleView import AutoAsignableRoleView
+import unidecode
+
 import src.bean.CONSTANTS as CONSTANTS
+
+#import pydeepl
+import requests
+
+import src.lib.mongodb as mongodb
+
+pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
 en_es = config.en_es
@@ -17,12 +24,9 @@ es_en = config.es_en
 session_dbg = aiohttp.ClientSession()
 session_dbl = aiohttp.ClientSession()
 
-
 class BaseCog(commands.Cog, name="Base"):
     def __init__(self, bot):
         self.bot = bot
-
-        self.persistent_views_added = False
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -32,52 +36,34 @@ class BaseCog(commands.Cog, name="Base"):
         game = discord.Game(f"Panchessco ♟️")
         await self.bot.change_presence(status=discord.Status.online, activity=game)
 
-        if not self.persistent_views_added:
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (0, 24)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (24, 48)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (48, 72)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (72, 96)))
-            self.bot.add_view(AutoAsignableRoleView(self.bot, (96, 120)))
-
-            self.persistent_views_added = True
-
+    
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot or message.channel.type.name != "text":
             return
-
-        if (
-            message.content == f"<@{self.bot.user.id}>"
-            or message.content == f"<@!{self.bot.user.id}>"
-        ):
+        
+        if message.content == f"<@{self.bot.user.id}>" or message.content == f"<@!{self.bot.user.id}>":
             await message.channel.send(f"Hola! mi prefijo es `{config.prefix}`")
         elif message.content.startswith(en_es) or message.content.startswith(es_en):
             if message.content.startswith(en_es):
                 args = message.content.replace(en_es, "").split(" ")[0:]
-                data = {
-                    "auth_key": config.deepl_pass,
-                    "text": " ".join(args),
-                    "target_lang": "ES",
-                }
+                data = {'auth_key': config.deepl_pass, 'text': ' '.join(args), 'target_lang': 'ES'}
+
 
             else:
                 args = message.content.replace(es_en, "").split(" ")[0:]
-                data = {
-                    "auth_key": config.deepl_pass,
-                    "text": " ".join(args),
-                    "target_lang": "EN",
-                    "source_lang": "ES",
-                }
+                data = {'auth_key': config.deepl_pass, 'text': ' '.join(args), 'target_lang': 'EN', 'source_lang': 'ES'}
+
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"https://api-free.deepl.com/v2/translate", data=data
-                ) as resp:
+                async with session.post(f'https://api-free.deepl.com/v2/translate', data=data) as resp:
                     if resp.status == 200:
                         data_json = await resp.json()
                         text_translation = data_json["translations"][0]["text"]
 
                         await message.channel.send(text_translation)
+
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -85,90 +71,74 @@ class BaseCog(commands.Cog, name="Base"):
         name = unidecode.unidecode(member.name)
         await member.edit(nick=name)
 
+
+
         if guild_id in self.bot.welcome_channels_id.keys():
             channel = self.bot.get_channel(self.bot.welcome_channels_id[guild_id])
-
+            
             emoji_fantasmita = self.bot.get_emoji(CONSTANTS.ID_EMOJI_FANTASMITA)
 
-            await channel.send(
-                f"Bienvenido al servidor **{member.name}**. Esperamos que la pases bien {emoji_fantasmita}"
-            )
-            # guild_panchessco = self.bot.get_guild(config.panchessco_id)
-            # member_lolced = guild_panchessco.get_member(335197648342745088)
+            await channel.send(f'Bienvenido al servidor **{member.name}**. Esperamos que la pases bien {emoji_fantasmita}')
+            #guild_panchessco = self.bot.get_guild(config.panchessco_id)
+            #member_lolced = guild_panchessco.get_member(335197648342745088)
             # F lolced, esperemos que vuelva
-            # await member_lolced.send(f'**{member.name}** entro al server weon!!!')
+            #await member_lolced.send(f'**{member.name}** entro al server weon!!!')
+
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         ignored = (commands.CommandNotFound,)
-        # await ctx.send(f'ERROR 1: {type(error)}')
+        #await ctx.send(f'ERROR 1: {type(error)}')
 
-        error = getattr(error, "original", error)
+        error = getattr(error, 'original', error)
 
-        # await ctx.send(f'ERROR 2: {type(error)}')
+        #await ctx.send(f'ERROR 2: {type(error)}')
 
         if isinstance(error, ignored):
             return
-
+        
         if isinstance(error, commands.CommandOnCooldown):
-            time_left = int(ctx.command.get_cooldown_retry_after(ctx) + 1)
+            time_left = int(ctx.command.get_cooldown_retry_after(ctx)+1)
 
             if time_left > 3600:
                 num_hours = int(time_left / 3600)
-                warn_msg = (
-                    f"Command on **cooldown**. Try again in **{num_hours} hours**."
-                )
+                warn_msg = f'Command on **cooldown**. Try again in **{num_hours} hours**.'
             elif time_left > 60:
                 num_minutes = int(time_left / 60)
-                warn_msg = (
-                    f"Command on **cooldown**. Try again in **{num_minutes} minutes**."
-                )
+                warn_msg = f'Command on **cooldown**. Try again in **{num_minutes} minutes**.'
             else:
                 num_seconds = time_left + 1
-                warn_msg = (
-                    f"Command on **cooldown**. Try again in **{num_seconds} seconds**."
-                )
+                warn_msg = f'Command on **cooldown**. Try again in **{num_seconds} seconds**.'
+
 
             await ctx.send(warn_msg)
             return
 
-        # await ctx.send(f'TIPE COMMAND DEL ERROR: {commands.errors.CommandInvokeError}')
+        #await ctx.send(f'TIPE COMMAND DEL ERROR: {commands.errors.CommandInvokeError}')
         if isinstance(error, discord.errors.Forbidden):
             aqua_member = ctx.guild.get_member(config.client_id)
-
+            
             if not aqua_member.permissions_in(ctx.channel).send_messages:
                 return
 
             else:
-                if ctx.command.name in (
-                    "puzzle",
-                    "displayfen",
-                    "accept",
-                    "move",
-                    "board",
-                ):
-                    await ctx.send(
-                        "This command requieres: **Embed Links** and **Attach Files** permissions in this channel"
-                    )
+                if ctx.command.name in ('puzzle', 'displayfen', 'accept', 'move', 'board'):
+                    await ctx.send('This command requieres: **Embed Links** and **Attach Files** permissions in this channel')
                     return
                 else:
-                    await ctx.send(
-                        "This command requieres: **Embed Links** permission in this channel"
-                    )
+                    await ctx.send('This command requieres: **Embed Links** permission in this channel')
                     return
 
         """if isinstance(error, discord.errors.MissingPermissions):
             await ctx.send("No tengo suficientes permisos")"""
 
-        text_0 = f"Author: {ctx.author} ({ctx.author.id})"
+        text_0 = f'Author: {ctx.author} ({ctx.author.id})'
 
         channel_fails = self.bot.get_channel(config.channel_fails_id)
         text_1 = ctx.message.content
-        # text_2 = ''.join(traceback.format_exception(etype=type(error), value=error, tb=error.__traceback__))
+        #text_2 = ''.join(traceback.format_exception(etype=type(error), value=error, tb=error.__traceback__))
 
-        lines_list = traceback.format_exception(
-            etype=type(error), value=error, tb=error.__traceback__
-        )
+        lines_list = traceback.format_exception(etype=type(error), value=error, tb=error.__traceback__)
 
         parrafos_list = []
 
@@ -176,16 +146,17 @@ class BaseCog(commands.Cog, name="Base"):
         while i < len(lines_list):
             parrafo = ""
 
-            while i < len(lines_list) and len(parrafo + lines_list[i]) < 1900:
+            while(i < len(lines_list) and len(parrafo + lines_list[i]) < 1900):
                 parrafo = parrafo + "\n" + lines_list[i]
                 i += 1
 
             parrafos_list.append(parrafo)
 
         await channel_fails.send(f"{text_0}\n```{text_1}```")
-
+    
         for parrafo in parrafos_list:
-            await channel_fails.send(f"```py\n{parrafo}```")
+            await channel_fails.send(f'```py\n{parrafo}```')
+
 
 
 def setup(bot):

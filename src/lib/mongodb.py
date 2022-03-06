@@ -1,15 +1,16 @@
 import copy
-import inspect
-from pprint import pprint
-import time
-
-from bson.objectid import ObjectId
-import dns
-
 # from tkinter import W
 import pymongo
-
+import dns
+from bson.objectid import ObjectId
 import config
+import time
+
+import copy
+
+from pprint import pprint
+
+import inspect
 
 
 def inspeccionar(objeto):
@@ -34,6 +35,22 @@ class PyMongoManager:
         self.collection_auto_reply = self.db_discord['auto_reply']
 
         self.shop = self.db_discord['shop']
+        self.panchessco = self.collection_guilds.find_one({'guild_id':512830421805826048})
+
+        self.profile_base = {
+            "user_id": None,
+            "description": None,            
+            "birthday_date_day": None,
+            "birthday_date_month": None,
+            "birthday_number_attemps": 0,
+            "thumbnail": "discord",
+            'legend_start_time': None,
+            'legend_times': 0,
+            'inventory': {},
+            'embed_color': None,
+            'cash': 0,
+            'bank': self.collection_guilds.find_one({'guild_id':512830421805826048})['start_balance']
+        }
 
         self.guild_base = {
             "guild_id": None,
@@ -71,23 +88,6 @@ class PyMongoManager:
                 }
             },
         }
-
-        self.profile_base = {
-            "user_id": None,
-            "description": None,            
-            "birthday_date_day": None,
-            "birthday_date_month": None,
-            "birthday_number_attemps": 0,
-            "thumbnail": "discord",
-            'legend_start_time': None,
-            'legend_times': 0,
-            'inventory': {},
-            'embed_color': None,
-            'cash': 0,
-            'bank': self.get_guild(512830421805826048)['start_balance']
-        }
-
-        self.panchessco = self.collection_guilds.find_one({'guild_id':512830421805826048})
 
         self.object_base = {
             "name": None,
