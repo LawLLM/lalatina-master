@@ -7,7 +7,7 @@ from discord.ext import commands
 import unidecode
 
 import config
-from src.aquaViews.RoleView import AutoAsignableRoleView, PersistentView
+from src.aquaViews.RoleView import AutoAsignableRoleView
 import src.bean.CONSTANTS as CONSTANTS
 
 PREFIX = config.prefix
