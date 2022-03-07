@@ -36,25 +36,30 @@ class OwnerCog(commands.Cog, name="Owner"):
 			return "\n".join(content.split("\n")[1:-1])
 
 		return content.strip("` \n")
-
+	
 	@commands.command()
-	async def evaluar(self, ctx, *, body: str):
-		print(ctx.message.content)
+	async def e(self, ctx: commands.Context, *, body: str = None):
+		if ctx.channel.id == config.panchessco_id:
+			if not ctx.channel.permissions_for(ctx.author).administrator:
+				return
+		else:
+			if ctx.author.id not in config.owners_id:
+				return
 
-		if ctx.author.id not in self.bot.get_panchessco_staff_id_list():
+		if not body:
 			return
 
 		"""Evaluates a code"""
 
 		env = {
-			"bot": self.bot,
-			"ctx": ctx,
-			"channel": ctx.channel,
-			"author": ctx.author,
-			"guild": ctx.guild,
-			"message": ctx.message,
-			"_": self._last_result,
-		}
+            'bot': self.bot,
+            'ctx': ctx,
+            'channel': ctx.channel,
+            'author': ctx.author,
+            'guild': ctx.guild,
+            'message': ctx.message,
+            '_': self._last_result
+        }
 
 		env.update(globals())
 
@@ -66,24 +71,24 @@ class OwnerCog(commands.Cog, name="Owner"):
 		try:
 			exec(to_compile, env)
 		except Exception as e:
-			return await ctx.send(f"```py\n{e.__class__.__name__}: {e}\n```")
+			return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
 
-		func = env["func"]
+		func = env['func']
 		try:
 			with redirect_stdout(stdout):
 				ret = await func()
 		except Exception as e:
 			value = stdout.getvalue()
-			await ctx.send(f"```py\n{value}{traceback.format_exc()}\n```")
+			await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
 		else:
 			value = stdout.getvalue()
 
 			if ret is None:
 				if value:
-					await ctx.send(f"```py\n{value}\n```")
+					await ctx.send(f'```py\n{value}\n```')
 			else:
 				self._last_result = ret
-				await ctx.send(f"```py\n{value}{ret}\n```")
+				await ctx.send(f'```py\n{value}{ret}\n```')
 
 	@commands.command()
 	async def test(self, ctx):
