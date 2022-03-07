@@ -7,12 +7,12 @@ import src.controller.utils as utils
 
 class TestSelect(discord.ui.Select):
     def __init__(self):
-        
+
         options = []
 
         for i in range(40):
             options.append(discord.SelectOption(label=str(i)))
-        
+
         super().__init__(
             placeholder="Select Role",
             options=options,
@@ -20,7 +20,7 @@ class TestSelect(discord.ui.Select):
             max_values=1,
             custom_id=f"ADFSFSFADSADFSFADSDAFSAFD",
         )
-    
+
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(content=self.values[0], ephemeral=True)
 
@@ -31,7 +31,6 @@ class TestView(discord.ui.View):
 
         self.test_select = TestSelect()
         self.add_item(self.test_select)
-
 
 
 class RoleSelect(discord.ui.Select):

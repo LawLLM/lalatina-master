@@ -1,16 +1,15 @@
 import copy
-# from tkinter import W
-import pymongo
-import dns
-from bson.objectid import ObjectId
-import config
+import inspect
+from pprint import pprint
 import time
 
-import copy
+from bson.objectid import ObjectId
+import dns
 
-from pprint import pprint
+# from tkinter import W
+import pymongo
 
-import inspect
+import config
 
 
 def inspeccionar(objeto):
