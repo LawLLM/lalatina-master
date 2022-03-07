@@ -39,7 +39,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 
     @commands.command()
     async def e(self, ctx: commands.Context, *, body: str = None):
-        if ctx.channel.id == config.panchessco_id:
+        if ctx.guild.id == config.panchessco_id:
             if not ctx.channel.permissions_for(ctx.author).administrator:
                 return
         else:
