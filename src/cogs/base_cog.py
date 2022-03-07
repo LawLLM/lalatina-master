@@ -10,12 +10,6 @@ import unidecode
 
 import src.bean.CONSTANTS as CONSTANTS
 
-#import pydeepl
-import requests
-
-import src.lib.mongodb as mongodb
-
-pyMongoManager = mongodb.PyMongoManager()
 
 PREFIX = config.prefix
 en_es = config.en_es

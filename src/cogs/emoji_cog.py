@@ -7,9 +7,9 @@ import unidecode
 import aiohttp
 import config
 
-#from modules.mongodb import PyMongoManager
+#from modules.mongodb import self.bot.pyMongoManager
 
-#pyMongoManager = PyMongoManager()
+#self.bot.pyMongoManager = self.bot.pyMongoManager()
 #session_emoji = aiohttp.ClientSession()
 
 PREFIX = config.prefix

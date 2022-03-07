@@ -11,10 +11,8 @@ import config
 from src.services.StringService import StringService
 import src.bean.CONSTANTS as CONSTANTS
 
-from src.lib.mongodb import PyMongoManager
-
-pyMongoManager = PyMongoManager()
-#session_emoji = aiohttp.ClientSession()
+import asyncio
+from datetime import date
 
 PREFIX = config.prefix
 
@@ -46,10 +44,10 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 				elif numbers_list[0] < 1 or numbers_list[0] > CONSTANTS.MAX_DAYS_BY_MONTH[numbers_list[1]]:
 					await ctx.send(f"El número de día para el mes de **{CONSTANTS.MONTH_STRING[numbers_list[1]]}** solo toma valores entre 1 y {CONSTANTS.MAX_DAYS_BY_MONTH[numbers_list[1]]}")
 				else:
-					profile = pyMongoManager.get_profile(ctx.author.id)
+					profile = self.bot.pyMongoManager.get_profile(ctx.author.id)
 
 					if profile['birthday_number_attemps'] < 2:
-						pyMongoManager.update_birthday(ctx.author.id, numbers_list[0], numbers_list[1])
+						self.bot.pyMongoManager.update_birthday(ctx.author.id, numbers_list[0], numbers_list[1])
 						remaining_attemps = 1 - profile['birthday_number_attemps']
 						if remaining_attemps == 0:
 							text_end = 'Ya no podrás cambiar tu fecha de cumpleaños.'
@@ -76,7 +74,7 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 		if not month_num:
 			month_num = time.gmtime().tm_mon
 
-		users_birthday = pyMongoManager.get_users_birthday(month_num)
+		users_birthday = self.bot.pyMongoManager.get_users_birthday(month_num)
 
 		bytes_dict = {}
 
@@ -106,7 +104,7 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 				guild_panchessco = self.bot.get_guild(config.panchessco_id)
 				role = guild_panchessco.get_role(config.role_birthday_id)
 				birthday_members = guild_panchessco.get_role(config.role_birthday_id).members # Los que tienen el rol del cumpleaños
-				result = list(pyMongoManager.collection_profiles.find({}))
+				result = list(self.bot.pyMongoManager.collection_profiles.find({}))
 				users = [x["user_id"] for x in result if
 							x["birthday_date_day"] == date.today().day and x["birthday_date_month"] == date.today().month]
 				new_birthday_members = [guild_panchessco.get_member(y) for y in users] # Los que cumplen

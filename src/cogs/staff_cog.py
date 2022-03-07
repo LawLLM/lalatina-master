@@ -3,14 +3,11 @@ from discord.ext import commands
 import time
 import asyncio
 
-from src.lib.mongodb import PyMongoManager
-
 #import modules.CONSTANTS as CONSTANTS
 
 import config
 
 PREFIX = config.prefix
-pyMongoManager = PyMongoManager()
 
 class StaffCog(commands.Cog, name="Staff"):
     def __init__(self, bot):
@@ -45,7 +42,7 @@ class StaffCog(commands.Cog, name="Staff"):
 
             await member.add_roles(rolLeyenda)
 
-            profile = pyMongoManager.update_legend(member.id)
+            profile = self.bot.pyMongoManager.update_legend(member.id)
 
             text = f'**{member.name}** gano el rol {rolLeyenda.mention} durante una semana.\n'
 
@@ -66,7 +63,7 @@ class StaffCog(commands.Cog, name="Staff"):
             guild_panchessco = self.bot.get_guild(config.panchessco_id)
             legend_members = guild_panchessco.get_role(config.role_legend_id).members
             legend_members_id = list(map(lambda member: member.id, legend_members))
-            profiles = pyMongoManager.get_profiles(legend_members_id)
+            profiles = self.bot.pyMongoManager.get_profiles(legend_members_id)
 
             for profile in profiles:
                 if time.time() - profile['legend_start_time'] > 3600 * 24 * 7:   # 7 days

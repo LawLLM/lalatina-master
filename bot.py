@@ -92,6 +92,6 @@ class PanchesscoBot(commands.AutoShardedBot):
 
 if __name__ == "__main__":
     bot = PanchesscoBot()
-    bot.run(config.token, bot=True)
+    bot.run(config.token)
 
 

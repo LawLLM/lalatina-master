@@ -4,7 +4,6 @@ import copy
 from discord.ext.commands.core import command
 
 import pymongo
-from src.lib.mongodb import PyMongoManager
 
 import unidecode
 
@@ -17,8 +16,6 @@ from src.bean.AutoReplyMenuBean import AutoReplyMenuBean
 
 from src.bean.MenuStackBean import MenuStackBean
 
-
-pyMongoManager = PyMongoManager()
 
 PREFIX = config.prefix
 
@@ -35,9 +32,9 @@ class EmojiCog(commands.Cog, name="Emoji"):
         self.auto_reaction_dict = {}    # emoji -> reaction
         self.auto_reply_dict = {}       # tag -> reply
 
-        star_board_list = pyMongoManager.get_all_starboard()
-        auto_reaction_list = pyMongoManager.get_all_auto_reaction()
-        auto_reply_list = pyMongoManager.get_all_auto_reply()
+        star_board_list = self.bot.pyMongoManager.get_all_starboard()
+        auto_reaction_list = self.bot.pyMongoManager.get_all_auto_reaction()
+        auto_reply_list = self.bot.pyMongoManager.get_all_auto_reply()
 
         for item in star_board_list:
             self.star_board_dict[item['original_message_id']] = {
@@ -149,7 +146,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
                             
                             self.star_board_dict[original_message.id]['starboard_channel_message_id'] = msg_channel_star_board.id
 
-                            pyMongoManager.add_star_board(original_message.id, msg_channel_star_board.id, payload.emoji.id)
+                            self.bot.pyMongoManager.add_star_board(original_message.id, msg_channel_star_board.id, payload.emoji.id)
 
 
     @commands.Cog.listener()
@@ -208,7 +205,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
                     self.auto_reaction_dict[frase] = emoji_id
 
                     await ctx.send('Se agrego una nueva auto reacción')
-                    pyMongoManager.add_auto_reaction(frase, emoji_id)
+                    self.bot.pyMongoManager.add_auto_reaction(frase, emoji_id)
                 except:
                     await ctx.send("`la!addautoreaction <emoji> <frase>`")
             else:
@@ -225,11 +222,11 @@ class EmojiCog(commands.Cog, name="Emoji"):
                 frase = ' '.join(args)
                 frase = frase.lower()
 
-                auto_reaction = pyMongoManager.get_auto_reaction(frase)
+                auto_reaction = self.bot.pyMongoManager.get_auto_reaction(frase)
 
                 if auto_reaction:
                     await ctx.send('Auto reacción eliminada')
-                    pyMongoManager.delete_auto_reaction(frase)
+                    self.bot.pyMongoManager.delete_auto_reaction(frase)
 
                     try:
                         del self.auto_reaction_dict[frase]
@@ -252,7 +249,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
         else:
             page = 1
 
-        autoReactionList = pyMongoManager.get_all_auto_reaction()
+        autoReactionList = self.bot.pyMongoManager.get_all_auto_reaction()
 
         autoReactionMenuBean = AutoReactionMenuBean(autoReactionList, self.bot.get_embed_color(ctx.author.id), ctx.author.id, self.bot, 10, page)
         
@@ -276,7 +273,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
                     self.auto_reply_dict[tag] = frase
 
                     await ctx.send('Se agrego una nuevo auto reply')
-                    pyMongoManager.add_auto_reply(tag, frase)
+                    self.bot.pyMongoManager.add_auto_reply(tag, frase)
                 except:
                     await ctx.send("`la!addautoreply <tag> <reply>`")
             else:
@@ -292,11 +289,11 @@ class EmojiCog(commands.Cog, name="Emoji"):
             if ctx.author.id in self.bot.get_panchessco_staff_id_list():
                 tag = args[0].lower()
 
-                auto_reply = pyMongoManager.get_auto_reply(tag)
+                auto_reply = self.bot.pyMongoManager.get_auto_reply(tag)
 
                 if auto_reply:
                     await ctx.send('Auto reply eliminado')
-                    pyMongoManager.delete_auto_reply(tag)
+                    self.bot.pyMongoManager.delete_auto_reply(tag)
 
                     try:
                         del self.auto_reply_dict[tag]
@@ -319,7 +316,7 @@ class EmojiCog(commands.Cog, name="Emoji"):
         else:
             page = 1
 
-        autoReplyList = pyMongoManager.get_all_auto_reply()
+        autoReplyList = self.bot.pyMongoManager.get_all_auto_reply()
 
         autoReplyMenuBean = AutoReplyMenuBean(autoReplyList, self.bot.get_embed_color(ctx.author.id), ctx.author.id, self.bot, 8, page)
         

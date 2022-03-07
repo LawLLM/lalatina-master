@@ -3,15 +3,12 @@ from discord.ext import commands
 import copy
 import time
 
+import src.bean.CONSTANTS as CONSTANTS
+
 import aiohttp
-
-from src.lib.mongodb import PyMongoManager
-
 
 import config
 
-
-pyMongoManager = PyMongoManager()
 session_emoji = aiohttp.ClientSession()
 
 class RewardsCog(commands.Cog, name="Rewards"):
@@ -23,7 +20,7 @@ class RewardsCog(commands.Cog, name="Rewards"):
     # Reescribir esto para que de monedas para los usuarios de Panchessco
     @commands.command()
     async def daily(self, ctx):
-        player = pyMongoManager.get_chess_profile(ctx.author.id)
+        player = self.bot.pyMongoManager.get_chess_profile(ctx.author.id)
 
         time_last_daily = player['time_last_daily']
 
@@ -85,7 +82,7 @@ class RewardsCog(commands.Cog, name="Rewards"):
             
             await ctx.send(f'You earned **{new_eris}** {emoji_aqua_coin} {msg_streak}')
 
-            pyMongoManager.update_daily(ctx.author.id, new_balance, time_current, multiplier)
+            self.bot.pyMongoManager.update_daily(ctx.author.id, new_balance, time_current, multiplier)
 
 
 def setup(bot):

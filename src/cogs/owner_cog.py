@@ -13,9 +13,6 @@ import aiohttp
 import time
 #import modules.CONSTANTS as CONSTANTS
 import config
-from src.lib.mongodb import PyMongoManager
-
-pyMongoManager = PyMongoManager()
 
 
 def inspeccionar(objeto):
@@ -97,7 +94,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 	# Envia un msg a un determinado canal
 	@commands.command()
 	async def msg_channel(self, ctx, channel_id, *arg_msgs):
-		if ctx.author.id not in pyMongoManager.get_dev_list():
+		if ctx.author.id not in self.bot.pyMongoManager.get_dev_list():
 			return
 
 		msg = " ".join(arg_msgs)
@@ -108,7 +105,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 
 	@commands.command()
 	async def msg_user(self, ctx, user_id, *arg_msgs):
-		if ctx.author.id not in pyMongoManager.get_dev_list():
+		if ctx.author.id not in self.bot.pyMongoManager.get_dev_list():
 			return
 
 		msg = " ".join(arg_msgs)
@@ -118,20 +115,20 @@ class OwnerCog(commands.Cog, name="Owner"):
 	
 	@commands.command(aliases=['add-dev'])
 	async def add_dev(self, ctx):
-		if ctx.author.id not in pyMongoManager.get_dev_list():
+		if ctx.author.id not in self.bot.pyMongoManager.get_dev_list():
 			return
 		args = ctx.message.content.split()[1:]
-		pyMongoManager.collection_guilds.find_one_and_update({'guild_id':512830421805826048}, {'$push': {'developers': int(args[0])}})
+		self.bot.pyMongoManager.collection_guilds.find_one_and_update({'guild_id':512830421805826048}, {'$push': {'developers': int(args[0])}})
 		await ctx.send(f"`{args[0]}` ahora es desarrollador de lalatina")
 
 	@commands.command(aliases=['delete-dev', 'remove-dev'])
 	async def delete_dev(self, ctx):
-		if ctx.author.id not in pyMongoManager.get_dev_list():
+		if ctx.author.id not in self.bot.pyMongoManager.get_dev_list():
 			return
 		args = ctx.message.content.split()[1:]
-		panchessco = pyMongoManager.collection_guilds.find_one({'guild_id':512830421805826048})
+		panchessco = self.bot.pyMongoManager.collection_guilds.find_one({'guild_id':512830421805826048})
 		panchessco['developers'].remove(int(args[0]))
-		pyMongoManager.collection_guilds.replace_one({'guild_id':512830421805826048}, panchessco)
+		self.bot.pyMongoManager.collection_guilds.replace_one({'guild_id':512830421805826048}, panchessco)
 		await ctx.send(f"`{args[0]}` ya no es desarrollador de lalatina")
 
 	@commands.command(aliases=['staff-list', 'dev-list'])
@@ -139,7 +136,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 		staff_list = self.bot.get_panchessco_staff_id_list()
 		if ctx.author.id not in staff_list:
 			return
-		panchessco = pyMongoManager.collection_guilds.find_one({'guild_id':512830421805826048})
+		panchessco = self.bot.pyMongoManager.collection_guilds.find_one({'guild_id':512830421805826048})
 
 		embed = discord.Embed(title="Staff de Panchessco")
 		embed.colour = self.bot.get_embed_color(ctx.author.id)
@@ -192,7 +189,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 					pages = data_json['total_pages']
 					page_1_data = data_json['balances']
 					for y in page_1_data:
-						pyMongoManager.update_money(y['user_id'], y['total'])
+						self.bot.pyMongoManager.update_money(y['user_id'], y['total'])
 		tiempo_aprox = int(round((pages*25)/17.7204968944, 0))
 		await ctx.send(f"`Tiempo de espera aproximado: {tiempo_aprox} segundos`")
 		for x in range(pages):
@@ -202,7 +199,7 @@ class OwnerCog(commands.Cog, name="Owner"):
 						data_json = await resp.json()
 						balances = data_json['balances']
 						for y in balances:
-							pyMongoManager.update_money(y['user_id'], y['total'])
+							self.bot.pyMongoManager.update_money(y['user_id'], y['total'])
 					else:
 						await ctx.send(f"`Error: index {x+1}`\nhttps://unbelievaboat.com/api/v1/guilds/512830421805826048/leaderboard?limit=25&page={x+1}")
 		end=time.time()

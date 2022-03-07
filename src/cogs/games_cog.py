@@ -10,12 +10,7 @@ from datetime import datetime
 
 import config
 
-from src.lib.mongodb import PyMongoManager
-
 from src.bean.RouletteBean import RouletteBean
-
-pyMongoManager = PyMongoManager()
-
 
 
 
@@ -26,7 +21,7 @@ class Games(commands.Cog, name="Games"):
         self.games_list_str = ['blackjack', 'roulette', 'cock-fight', 'russian-roulette', 'slot-machine']
 
         # TODO: los bets limits deben ser por cada servidor
-        #guild_document = pyMongoManager.get_guild(config.panchessco_id)
+        #guild_document = self.bot.pyMongoManager.get_guild(config.panchessco_id)
 
         #self.games_bet_limits = guild_document['bet_limits']
 
@@ -131,7 +126,7 @@ class Games(commands.Cog, name="Games"):
 
                     await ctx.send(embed=embed)
 
-                    pyMongoManager.collection_guilds.update_one({'guild_id': ctx.guild.id}, {'$set': {'bet_limits': self.games_bet_limits}})
+                    self.bot.pyMongoManager.collection_guilds.update_one({'guild_id': ctx.guild.id}, {'$set': {'bet_limits': self.games_bet_limits}})
 
                 else:
                     await error_message('invalid_argument', argument='min | max')

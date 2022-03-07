@@ -9,9 +9,8 @@ import requests
 import aiohttp
 import math
 import time
-from time import sleep
+
 import pymongo
-from src.lib.mongodb import PyMongoManager
 
 import config
 from src.bean.CONSTANTS import *
@@ -19,15 +18,7 @@ from src.bean.CONSTANTS import *
 import random
 import math
 
-#import modules.CONSTANTS_IMAGES as CONSTANTS_IMAGES
 
-#from modules.image_editor import ImageEditor
-
-#import modules.CONSTANTS as CONSTANTS
-
-#imageEditor = ImageEditor()
-
-pyMongoManager = PyMongoManager()
 session_emoji = aiohttp.ClientSession()
 
 # BASE PARA LA ECONOMIA DE PANCHESSCOBOT
@@ -40,7 +31,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 	async def shop(self, ctx):
 		args = ctx.message.content.split()[1:]
 
-		items = pyMongoManager.get_items()
+		items = self.bot.pyMongoManager.get_items()
 		num_pages = math.ceil(len(items)/10)
 		page=1
 
@@ -76,7 +67,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 	async def buy(self, ctx):
 		args = ctx.message.content.split()[1:]
 
-		user = pyMongoManager.get_profile(ctx.author.id)
+		user = self.bot.pyMongoManager.get_profile(ctx.author.id)
 
 
 		C_trencada = self.bot.get_emoji(555903896363466762)
@@ -88,7 +79,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 		else:
 			cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó","o").replace("ú", "u").replace(" ", "").replace(".", "")
 			
-			obj = pyMongoManager.shop.find_one({"key": cons})
+			obj = self.bot.pyMongoManager.shop.find_one({"key": cons})
 			
 			if obj is not None:
 				if obj['roleRequired'] is not None:
@@ -106,10 +97,10 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 						if obj['stock'] is not None:  
 							if obj['stock'] == 1:
-								pyMongoManager.shop.delete_one({'name': obj['name']})
+								self.bot.pyMongoManager.shop.delete_one({'name': obj['name']})
 								await ctx.message.channel.send(f"Ya no quedan más `{obj['name']}`")
 							else:
-								pyMongoManager.shop.find_one_and_update({'name':obj['name']}, {"$inc": {"stock": -1}})
+								self.bot.pyMongoManager.shop.find_one_and_update({'name':obj['name']}, {"$inc": {"stock": -1}})
 								await ctx.message.channel.send(f"Número de `{obj['name']}` disponibles: `{obj['stock']-1}`")
 
 						if obj['name'] in user['inventory']:
@@ -120,7 +111,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-						pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
+						self.bot.pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
 
 						await ctx.send(f"Has recibido `{obj['name']}`")
 
@@ -143,8 +134,8 @@ class EconomyCog(commands.Cog, name="Economy"):
 			return
 
 		cons = ' '.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
-		obj = pyMongoManager.shop.find_one({"key": cons})
-		user = pyMongoManager.get_profile(ctx.author.id)
+		obj = self.bot.pyMongoManager.shop.find_one({"key": cons})
+		user = self.bot.pyMongoManager.get_profile(ctx.author.id)
 
 
 		if obj is None:
@@ -189,7 +180,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 		
-		pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
+		self.bot.pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, user)
 
 
 
@@ -220,7 +211,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 			await ctx.send("Este comando no funciona en bots")
 			return
 
-		user = pyMongoManager.get_profile(member.id)
+		user = self.bot.pyMongoManager.get_profile(member.id)
 
 
 		embed = discord.Embed()
@@ -248,7 +239,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 	@commands.command(aliases=['add-item'])
 	async def additem(self, ctx):
 
-		obj = pyMongoManager.object_base
+		obj = self.bot.pyMongoManager.object_base
 		stock = False
 		roleAd = False
 		roleRe = False
@@ -394,7 +385,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 			return        
 
 		
-		pyMongoManager.shop.insert_one(obj)
+		self.bot.pyMongoManager.shop.insert_one(obj)
 		
 
 		embed = discord.Embed(title="Nuevo objeto añadido a la tienda\n")
@@ -471,8 +462,8 @@ class EconomyCog(commands.Cog, name="Economy"):
 				
 				else:
 					emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-					player_author = pyMongoManager.get_profile(ctx.author.id)
-					player_receiver = pyMongoManager.get_profile(member.id)
+					player_author = self.bot.pyMongoManager.get_profile(ctx.author.id)
+					player_receiver = self.bot.pyMongoManager.get_profile(member.id)
 					amount = int(args[1])
 
 					if amount == 0:
@@ -484,8 +475,8 @@ class EconomyCog(commands.Cog, name="Economy"):
 						new_balance_receiver = player_receiver['cash'] + amount
 
 
-						pyMongoManager.update_money(ctx.author.id, new_balance_author)
-						pyMongoManager.update_money(member.id, new_balance_receiver)    
+						self.bot.pyMongoManager.update_money(ctx.author.id, new_balance_author)
+						self.bot.pyMongoManager.update_money(member.id, new_balance_receiver)    
 
 						embed = discord.Embed()
 						embed.colour = discord.Color.from_rgb(230, 126, 34)
@@ -528,11 +519,11 @@ class EconomyCog(commands.Cog, name="Economy"):
 						await ctx.send("Este comando no funciona en bots")
 						return
 
-					player = pyMongoManager.get_profile(member.id)
+					player = self.bot.pyMongoManager.get_profile(member.id)
 					new_balance = player['cash'] + int(args[1])
 
 					emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-					pyMongoManager.update_money(member.id, new_balance)
+					self.bot.pyMongoManager.update_money(member.id, new_balance)
 					await ctx.send(f"Dinero de {member.name}: **{new_balance}** :eggplant:")
 				else:
 					await ctx.send('Cantidad no válida')
@@ -566,11 +557,11 @@ class EconomyCog(commands.Cog, name="Economy"):
 						await ctx.send("Este comando no funciona en bots")
 						return
 
-					player = pyMongoManager.get_profile(member.id)
+					player = self.bot.pyMongoManager.get_profile(member.id)
 					new_balance = player['cash'] - int(args[1])
 
 					emoji_aqua_coin = self.bot.get_emoji(795469711441002537)
-					pyMongoManager.update_money(member.id, new_balance)
+					self.bot.pyMongoManager.update_money(member.id, new_balance)
 					await ctx.send(f"Dinero de {member.name}: **{new_balance}** :eggplant:")
 				else:
 					await ctx.send('Cantidad no válida')
@@ -595,7 +586,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 				page = 1
 
 
-		result = pyMongoManager.collection_profiles.find({})
+		result = self.bot.pyMongoManager.collection_profiles.find({})
 		list_result = list(result)
 		list_result.sort(key=lambda result: result['cash']+result['bank'], reverse=True)
 		
@@ -627,18 +618,18 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 
 
-	@commands.cooldown(1, pyMongoManager.get_time_remaining('work'), commands.BucketType.user)
+	@commands.cooldown(1, 300, commands.BucketType.user)
 	@commands.command()
 	async def work(self, ctx):
-		user = pyMongoManager.get_profile(ctx.author.id)
+		user = self.bot.pyMongoManager.get_profile(ctx.author.id)
 
 		amount = random.randint(100, 700)
 
 		user['cash'] += amount
 
-		pyMongoManager.update_money(ctx.author.id, user['cash'])
+		self.bot.pyMongoManager.update_money(ctx.author.id, user['cash'])
 
-		server = pyMongoManager.get_guild(512830421805826048)
+		server = self.bot.pyMongoManager.get_guild(512830421805826048)
 
 		phrases = [x for x in server['work_phrases']]
 		
@@ -661,7 +652,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 			else:
 				if "{{{}}}".format('amount') in args:
-					pyMongoManager.add_work_phrase(' '.join(args).replace("🍆", ":eggplant:"))
+					self.bot.pyMongoManager.add_work_phrase(' '.join(args).replace("🍆", ":eggplant:"))
 					await ctx.send("Frase añadida!")
 
 				else:
@@ -677,7 +668,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 		if ctx.message.author.guild_permissions.administrator:
 			args = ctx.message.content.split()[1:]
 
-			server = pyMongoManager.get_guild(512830421805826048)
+			server = self.bot.pyMongoManager.get_guild(512830421805826048)
 			work_phrases = server['work_phrases']
 
 			page = 1
@@ -722,13 +713,13 @@ class EconomyCog(commands.Cog, name="Economy"):
 	
 			
 			else:
-				server = pyMongoManager.get_guild(512830421805826048)
+				server = self.bot.pyMongoManager.get_guild(512830421805826048)
 				index = None
 				if len(args) == 2 and args[0].isdigit() and args[1].isdigit():
 					index = [int(args[0]), int(args[1])]
 					try:
 						phrase = server['work_phrases'][index[0]-1:index[1]]
-						pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': { '$in': phrase }}}, upsert=False, multi=True)
+						self.bot.pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': { '$in': phrase }}}, upsert=False, multi=True)
 						await ctx.send("Frase eliminada!")
 					except IndexError:
 						await ctx.send("Los índices son incorrectos")
@@ -738,7 +729,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 					index = int(args[0])
 					try:
 						phrase = server['work_phrases'][index-1]
-						pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
+						self.bot.pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
 						await ctx.send("Frase eliminada!")
 					except IndexError:
 						await ctx.send(f"El índice es incorrecto (No existe elemento nº{index}")
@@ -750,7 +741,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 					if phrase not in server['work_phrases']:
 						await ctx.send(f"No se ha encontrado la frase `{phrase}`")
 					else:
-						pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
+						self.bot.pyMongoManager.collection_guilds.update({'guild_id': 512830421805826048}, {'$pull': {'work_phrases': phrase}})
 						await ctx.send("Frase eliminada!")
 
 		else:
@@ -777,7 +768,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 				await ctx.send("Por favor, ingrese una cantidad válida")
 				return
 
-		usr = pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
+		usr = self.bot.pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
 		if amount == "all":
 			amount = usr['bank']
 		if usr['bank'] < amount:
@@ -785,7 +776,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 			return
 		usr['cash'] += amount
 		usr['bank'] -= amount
-		pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
+		self.bot.pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
 		await ctx.send(f"Has sacado {amount} :eggplant: del banco")
 
 
@@ -808,7 +799,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 				return
 
 
-		usr = pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
+		usr = self.bot.pyMongoManager.collection_profiles.find_one({'user_id': ctx.author.id})
 		if amount == "all":
 			amount = usr['cash']
 		if usr['cash'] < amount:
@@ -816,7 +807,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 			return
 		usr['cash'] -= amount
 		usr['bank'] += amount
-		pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
+		self.bot.pyMongoManager.collection_profiles.replace_one({'user_id': ctx.author.id}, usr)
 		await ctx.send(f"Has depositado {amount} :eggplant: en el banco")
 
 
@@ -833,7 +824,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 		
 		else:
 			cons = ''.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
-			obj = pyMongoManager.collection_shop.find_one({'key': cons})
+			obj = self.bot.pyMongoManager.collection_shop.find_one({'key': cons})
 
 			if obj is not None:
 				embed = discord.Embed(title=obj['name'])
@@ -882,12 +873,12 @@ class EconomyCog(commands.Cog, name="Economy"):
 		
 		cons = ''.join(args).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
 
-		obj = pyMongoManager.collection_shop.find_one({'key': cons})
+		obj = self.bot.pyMongoManager.collection_shop.find_one({'key': cons})
 		if obj is None:
 			await ctx.send(f"No se ha encontrado el objeto `{' '.join(args)}`")
 			return
 		else:
-			pyMongoManager.collection_shop.delete_one({'key': cons})
+			self.bot.pyMongoManager.collection_shop.delete_one({'key': cons})
 			await ctx.send("Objeto borrado")
 
 
@@ -910,7 +901,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
 		cons = ''.join(args[2:]).lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú","u").replace(" ", "").replace(".", "")
 
-		if pyMongoManager.collection_shop.find_one({'key': cons}) is None:
+		if self.bot.pyMongoManager.collection_shop.find_one({'key': cons}) is None:
 			await ctx.send(f"No se ha encontrado el objeto `{' '.join(args[2:])}`")
 			return
 
@@ -919,7 +910,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 		
 
 
-		pyMongoManager.collection_shop.find_one_and_update({'key': cons}, {'$set': {args[0]:args[1]}})
+		self.bot.pyMongoManager.collection_shop.find_one_and_update({'key': cons}, {'$set': {args[0]:args[1]}})
 		await ctx.send("Cambios realizados")
 
 

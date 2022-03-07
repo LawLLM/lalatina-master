@@ -6,11 +6,9 @@ import discord.utils as dutils
 import src.lib.mongodb as mongodb
 import src.controller.utils as utils
 
-pyMongoManager = mongodb.PyMongoManager()
 
-
-def getIdRolesSelfAssignable(guild_id):
-    guild_dict = pyMongoManager.get_guild(guild_id)
+def getIdRolesSelfAssignable(guild_id, bot):
+    guild_dict = bot.pyMongoManager.get_guild(guild_id)
 
     if guild_dict:
         try:
@@ -36,7 +34,7 @@ class RoleCog(commands.Cog, name="Role"):
             role = dutils.get(ctx.guild.roles, name=role_query)
 
             if role:
-                roles_self_assignable = getIdRolesSelfAssignable(ctx.guild.id)
+                roles_self_assignable = getIdRolesSelfAssignable(ctx.guild.id, self.bot)
 
                 for role_aux in ctx.author.roles:
                     if role_aux.id in roles_self_assignable and role_aux.name != role.name:
@@ -54,7 +52,7 @@ class RoleCog(commands.Cog, name="Role"):
                         HEX_color = utils.RGB_to_HEX(role_colour.r, role_colour.g, role_colour.b)
 
                         self.bot.set_embed_color(ctx.author.id, HEX_color)
-                        pyMongoManager.set_embed_color(ctx.author.id, HEX_color)
+                        self.bot.pyMongoManager.set_embed_color(ctx.author.id, HEX_color)
                 else:
                     await ctx.send(f"The role **{role_query}** is not self-assignable.")
             else:
