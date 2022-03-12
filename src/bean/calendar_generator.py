@@ -1,6 +1,7 @@
 import calendar
 import datetime
 from io import BytesIO
+import time
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -46,10 +47,11 @@ day_str = {0: "D", 1: "L", 2: "M", 3: "M", 4: "J", 5: "V", 6: "S"}
 
 class CalendarGenerator:
     def new_calendar_img(self, month_int, bytes_dict):
-        day_relative_base = datetime.datetime(2021, month_int, 1).weekday()
+        year_int = time.gmtime().tm_year
+        day_relative_base = datetime.datetime(year_int, month_int, 1).weekday()
         if day_relative_base == 6:
             day_relative_base = -1
-        a, total_days = calendar.monthrange(2021, month_int)
+        a, total_days = calendar.monthrange(year_int, month_int)
         max_day_num = day_relative_base + total_days
         y = int(max_day_num / 7)
 
@@ -59,7 +61,7 @@ class CalendarGenerator:
         img_base = Image.new("RGB", (W, H + y_inc * (y - 3)), color=(62, 45, 82))
         draw = ImageDraw.Draw(img_base)
 
-        text_title = f"{month_str[month_int]} - 2021"
+        text_title = f"{month_str[month_int]} - {year_int}"
 
         w, h = draw.textsize(text_title, font=font_title)
         draw.text(((W - w) / 2, 10), text_title, font=font_title, fill=(255, 255, 0))
@@ -79,7 +81,7 @@ class CalendarGenerator:
             )
 
         for num_day in range(1, total_days + 1):
-            day_datetime = datetime.datetime(2021, month_int, num_day)
+            day_datetime = datetime.datetime(year_int, month_int, num_day)
 
             day_relative = day_relative_base + num_day
 

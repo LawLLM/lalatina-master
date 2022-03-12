@@ -19,6 +19,8 @@ class BirthdayCog(commands.Cog, name="Birthday"):
     def __init__(self, bot):
         self.bot = bot
 
+        self.bot.loop.create_task(self.check_birthday())
+
     @commands.command()
     async def setbirthday(self, ctx):
         args = ctx.message.content.split()[1:]
@@ -98,34 +100,6 @@ class BirthdayCog(commands.Cog, name="Birthday"):
 
         await ctx.send(file=discord.File(fp=img_buffer, filename="hb.png"))
 
-        async def check(self):
-            while not self.bot.is_closed():
-                await asyncio.sleep(600)
-
-                guild_panchessco = self.bot.get_guild(config.panchessco_id)
-                role = guild_panchessco.get_role(config.role_birthday_id)
-                birthday_members = guild_panchessco.get_role(
-                    config.role_birthday_id
-                ).members  # Los que tienen el rol del cumpleaños
-                result = list(self.bot.pyMongoManager.collection_profiles.find({}))
-                users = [
-                    x["user_id"]
-                    for x in result
-                    if x["birthday_date_day"] == date.today().day
-                    and x["birthday_date_month"] == date.today().month
-                ]
-                new_birthday_members = [
-                    guild_panchessco.get_member(y) for y in users
-                ]  # Los que cumplen
-
-                for busr in birthday_members:
-                    if busr not in new_birthday_members:
-                        await busr.remove_roles(role)
-
-                for usr in new_birthday_members:
-                    if role not in usr.roles:
-                        await usr.add_roles(role)
-
     @commands.command()
     async def test_avatar(self, ctx):
         avatar_asset = ctx.author.avatar_url_as(format="png", size=128)
@@ -150,6 +124,34 @@ class BirthdayCog(commands.Cog, name="Birthday"):
             numbers_list = stringService.findNumbers(string)
 
             await ctx.send(numbers_list)
+
+    async def check_birthday(self):
+        while not self.bot.is_closed():
+            await asyncio.sleep(600)
+
+            guild_panchessco = self.bot.get_guild(config.panchessco_id)
+            role = guild_panchessco.get_role(config.role_birthday_id)
+            birthday_members = guild_panchessco.get_role(
+                config.role_birthday_id
+            ).members  # Los que tienen el rol del cumpleaños
+            result = list(self.bot.pyMongoManager.collection_profiles.find({}))
+            users = [
+                x["user_id"]
+                for x in result
+                if x["birthday_date_day"] == date.today().day
+                and x["birthday_date_month"] == date.today().month
+            ]
+            new_birthday_members = [
+                guild_panchessco.get_member(y) for y in users
+            ]  # Los que cumplen
+
+            for busr in birthday_members:
+                if busr not in new_birthday_members:
+                    await busr.remove_roles(role)
+
+            for usr in new_birthday_members:
+                if role not in usr.roles:
+                    await usr.add_roles(role)
 
 
 def setup(bot):
