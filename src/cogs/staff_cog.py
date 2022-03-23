@@ -21,8 +21,13 @@ class StaffCog(commands.Cog, name="Staff"):
     @commands.command()
     async def addleyenda(self, ctx):
         args = ctx.message.content.split()[1:]
-        if ctx.author.id not in self.bot.get_panchessco_staff_id_list() and not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("Necesitas ser parte del staf o ser admin para usar este comando")
+        if (
+            ctx.author.id not in self.bot.get_panchessco_staff_id_list()
+            and not ctx.author.permissions_in(ctx.channel).administrator
+        ):
+            await ctx.send(
+                "Necesitas ser parte del staf o ser admin para usar este comando"
+            )
             return
         if len(args) == 0:
             await ctx.send(f"Correcto uso: `{PREFIX}addleyenda <mention/user_id>`")

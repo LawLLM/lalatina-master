@@ -1,4 +1,5 @@
 import asyncio
+import string
 import traceback
 
 import aiohttp
@@ -68,10 +69,8 @@ class BaseCog(commands.Cog, name="Base"):
                         await message.channel.send(text_translation)
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member):
         guild_id = member.guild.id
-        name = unidecode.unidecode(member.name)
-        await member.edit(nick=name)
 
         if guild_id in self.bot.welcome_channels_id.keys():
             channel = self.bot.get_channel(self.bot.welcome_channels_id[guild_id])
@@ -81,10 +80,13 @@ class BaseCog(commands.Cog, name="Base"):
             await channel.send(
                 f"Bienvenido al servidor **{member.name}**. Esperamos que la pases bien {emoji_fantasmita}"
             )
-            # guild_panchessco = self.bot.get_guild(config.panchessco_id)
-            # member_lolced = guild_panchessco.get_member(335197648342745088)
-            # F lolced, esperemos que vuelva
-            # await member_lolced.send(f'**{member.name}** entro al server weon!!!')
+
+        valid_characters = string.printable + "áéíóúÁÉÍÓÚñÑüÜ"
+
+        is_valid = all(char in valid_characters for char in member.name)
+
+        if not is_valid:
+            await member.edit(nick=unidecode.unidecode(member.name))
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
