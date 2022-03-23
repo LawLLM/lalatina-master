@@ -64,6 +64,8 @@ class StaffCog(commands.Cog, name="Staff"):
             embed.description = text
             await ctx.send(embed=embed)
 
+            await ctx.message.delete()
+
     async def legend_cleaner(self):
         while not self.bot.is_closed():
             await asyncio.sleep(3600)  # Cada hora
