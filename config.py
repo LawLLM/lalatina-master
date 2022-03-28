@@ -27,6 +27,7 @@ channel_star_board_id = 892980248197623828
 # ID del servidor Panchessco
 panchessco_id = 512830421805826048
 panchessco_role_staff_id = 892978210101428264
+panchessco_role_tournament_manager_id = 956651608857522226
 
 # PanchesscoBot
 token = os.environ.get("BOT_TOKEN")

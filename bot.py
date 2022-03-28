@@ -93,6 +93,19 @@ class PanchesscoBot(commands.AutoShardedBot):
 
         return admins_id_list
 
+    def get_panchessco_tournament_manager_id_list(self):
+        panchessco_guild = self.get_guild(config.panchessco_id)
+        panchessco_role_tournament_manager = panchessco_guild.get_role(
+            config.panchessco_role_tournament_manager_id
+        )
+
+        tournament_manager_id_list = [
+            tournament_manager.id
+            for tournament_manager in panchessco_role_tournament_manager.members
+        ]
+
+        return tournament_manager_id_list
+
 
 if __name__ == "__main__":
     bot = PanchesscoBot()

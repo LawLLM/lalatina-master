@@ -23,10 +23,12 @@ class StaffCog(commands.Cog, name="Staff"):
         args = ctx.message.content.split()[1:]
         if (
             ctx.author.id not in self.bot.get_panchessco_staff_id_list()
+            and ctx.author.id
+            not in self.bot.get_panchessco_tournament_manager_id_list()
             and not ctx.author.permissions_in(ctx.channel).administrator
         ):
             await ctx.send(
-                "Necesitas ser parte del staf o ser admin para usar este comando"
+                "Necesitas ser parte del staff o ser admin para usar este comando"
             )
             return
         if len(args) == 0:
