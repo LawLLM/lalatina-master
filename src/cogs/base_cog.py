@@ -31,7 +31,15 @@ class BaseCog(commands.Cog, name="Base"):
         await self.bot.change_presence(status=discord.Status.online, activity=game)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
+        if message.channel.id == config.channel_logs_id:  # Logs channel
+            if len(message.embeds) > 0:
+                embed = message.embeds[0]
+
+                if "n!confession" in embed.description.lower():
+                    await message.delete()
+                    return
+
         if message.author.bot or message.channel.type.name != "text":
             return
 
