@@ -42,11 +42,11 @@ class EmojiCog(commands.Cog, name="Emoji"):
         }
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.guild.id not in (691310556489056398, 512830421805826048):
             return
 
-        content_lower = unidecode.unidecode(message.content.lower().replace(".", ""))
+        content_lower = message.content.lower()
         if content_lower in self.emoji_auto_reaction_id.keys():
             emoji = self.bot.get_emoji(self.emoji_auto_reaction_id[content_lower])
             await message.add_reaction(emoji)
